@@ -5,27 +5,37 @@ import Element as E exposing (el, px, text)
 import Element.Background as Bg
 import Element.Input as Input exposing (button)
 import Games.Snake.Model
+import Games.Snake.Update
+import Games.Snake.View
 import Html exposing (Html)
 
 
 type Model
     = NoGame
-    | Snake Games.Snake.Model.Model
+    | PlayingSnake Games.Snake.Model.Model
 
 
-{-| TODO:
--}
-type alias Game =
-    String
+gameName : Game -> String
+gameName game =
+    case game of
+        Snake ->
+            "Snake"
+
+
+gameInit : Game -> Model
+gameInit game =
+    case game of
+        Snake ->
+            PlayingSnake Games.Snake.Model.init
+
+
+type Game
+    = Snake
 
 
 games : List Game
 games =
-    [ "Snake"
-    , "18th Century MMORPG in Colonial Times (Working Title)"
-    , "Pong"
-    , "Tower Defense"
-    ]
+    [ Snake ]
 
 
 init : ( Model, Cmd Msg )
@@ -34,17 +44,34 @@ init =
 
 
 type Msg
-    = NoOp
-    | StartPlaying Game
+    = StartPlaying Game
+    | SnakeMsg Games.Snake.Update.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        StartPlaying game ->
+            ( gameInit game, Cmd.none )
+
+        SnakeMsg snakeMsg ->
+            let
+                snakeModel =
+                    case model of
+                        NoGame ->
+                            Debug.todo "crash"
+
+                        PlayingSnake m ->
+                            m
+
+                newModel =
+                    Games.Snake.Update.update snakeMsg snakeModel
+            in
+            ( PlayingSnake newModel, Cmd.none )
 
 
-view : Model -> Html Msg
-view model =
+noGame : Model -> Html Msg
+noGame model =
     E.layout [ E.centerX, E.centerY ] <|
         E.wrappedRow
             [ E.centerX, E.centerY, E.padding 10, E.spacing 10 ]
@@ -57,11 +84,21 @@ view model =
                                 , E.padding 10
                                 ]
                                 { onPress = Just (StartPlaying game)
-                                , label = text game
+                                , label = text (gameName game)
                                 }
                             )
                     )
             )
+
+
+view : Model -> Html Msg
+view model =
+    case model of
+        NoGame ->
+            noGame model
+
+        PlayingSnake snakeModel ->
+            Html.map SnakeMsg (Games.Snake.View.view snakeModel)
 
 
 
