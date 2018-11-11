@@ -21,7 +21,7 @@ boardWidth =
 
 snakeSegmentSize : Float
 snakeSegmentSize =
-    1
+    10
 
 
 view : Model -> Html msg
@@ -34,13 +34,19 @@ view model =
 
         snek : Collage msg
         snek =
-            square snakeSegmentSize
-                |> filled (uniform Color.green)
+            model.body |> List.map drawSnakeSegment |> group
 
         food : Collage msg
         food =
             square snakeSegmentSize
                 |> filled (uniform Color.darkCharcoal)
+                |> shift ( 100, -200 )
     in
-    boardRect
-        |> svg
+    group [ boardRect, snek, food ] |> svg
+
+
+drawSnakeSegment : Point -> Collage msg
+drawSnakeSegment ( x, y ) =
+    square snakeSegmentSize
+        |> styled ( uniform Color.green, solid 2 <| uniform Color.black )
+        |> shift ( x * snakeSegmentSize, y * snakeSegmentSize )
