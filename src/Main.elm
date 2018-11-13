@@ -1,18 +1,21 @@
 module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
+import Browser.Events
 import Element as E exposing (el, px, text)
 import Element.Background as Bg
 import Element.Input as Input exposing (button)
-import Games.Snake.Model
-import Games.Snake.Update
-import Games.Snake.View
+import Games.Snake.Model as SnakeModel
+import Games.Snake.Update as SnakeUpdate
+import Games.Snake.View as SnakeView
 import Html exposing (Html)
+import Key
+import Time
 
 
 type Model
     = NoGame
-    | PlayingSnake Games.Snake.Model.Model
+    | PlayingSnake SnakeModel.Model
 
 
 gameName : Game -> String
@@ -26,7 +29,7 @@ gameInit : Game -> Model
 gameInit game =
     case game of
         Snake ->
-            PlayingSnake Games.Snake.Model.init
+            PlayingSnake SnakeModel.init
 
 
 type Game
@@ -45,7 +48,7 @@ init =
 
 type Msg
     = StartPlaying Game
-    | SnakeMsg Games.Snake.Update.Msg
+    | SnakeMsg SnakeUpdate.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -56,16 +59,18 @@ update msg model =
 
         SnakeMsg snakeMsg ->
             let
+                snakeModel : SnakeModel.Model
                 snakeModel =
                     case model of
                         NoGame ->
-                            Debug.todo "crash"
+                            SnakeModel.init
 
                         PlayingSnake m ->
                             m
 
+                newModel : SnakeModel.Model
                 newModel =
-                    Games.Snake.Update.update snakeMsg snakeModel
+                    SnakeUpdate.update snakeMsg snakeModel
             in
             ( PlayingSnake newModel, Cmd.none )
 
@@ -98,11 +103,21 @@ view model =
             noGame model
 
         PlayingSnake snakeModel ->
-            Html.map SnakeMsg (Games.Snake.View.view snakeModel)
+            Html.map SnakeMsg (SnakeView.view snakeModel)
 
 
 
 ---- PROGRAM ----
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model of
+        NoGame ->
+            Sub.none
+
+        PlayingSnake snakeModel ->
+            SnakeUpdate.subs snakeModel |> Sub.map SnakeMsg
 
 
 main : Program () Model Msg
@@ -111,5 +126,5 @@ main =
         { view = view
         , init = \_ -> init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }

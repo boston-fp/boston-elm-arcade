@@ -1,4 +1,4 @@
-module Games.Snake.Model exposing (Model, init)
+module Games.Snake.Model exposing (Model, Point, init)
 
 {-| x is right (->) y is up (^)
 -}
