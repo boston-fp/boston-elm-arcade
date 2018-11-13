@@ -1,4 +1,4 @@
-module Key exposing (Key, decoder)
+module Key exposing (Key(..), decoder)
 
 import Json.Decode as Decode
 
@@ -8,6 +8,7 @@ type Key
     | Right
     | Up
     | Down
+    | Space
     | Other String
 
 
@@ -30,6 +31,9 @@ fromStr string =
 
         "ArrowDown" ->
             Down
+
+        " " ->
+            Space
 
         _ ->
             Other string

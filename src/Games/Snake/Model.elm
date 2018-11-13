@@ -11,6 +11,7 @@ type alias Point =
 type alias Model =
     { body : List Point
     , foodPosition : Point
+    , paused : Bool
     }
 
 
@@ -18,4 +19,5 @@ init : Model
 init =
     { body = [ ( 0, 0 ), ( 0, -1 ), ( 0, -2 ) ]
     , foodPosition = ( 10, 1 )
+    , paused = False
     }

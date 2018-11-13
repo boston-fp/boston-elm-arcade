@@ -21,10 +21,19 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         NewFrame delta ->
-            { model | body = moveSnake Up model.body }
+            if model.paused then
+                model
+
+            else
+                { model | body = moveSnake Up model.body }
 
         KeyPressed key ->
-            model
+            case key of
+                Key.Space ->
+                    { model | paused = not model.paused }
+
+                _ ->
+                    model
 
 
 type Direction

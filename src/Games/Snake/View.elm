@@ -3,6 +3,7 @@ module Games.Snake.View exposing (view)
 import Collage exposing (..)
 import Collage.Layout exposing (..)
 import Collage.Render exposing (svg)
+import Collage.Text exposing (..)
 import Color
 import Games.Snake.Model exposing (Model)
 import Games.Snake.Update exposing (Msg(..))
@@ -41,8 +42,23 @@ view model =
             square snakeSegmentSize
                 |> filled (uniform Color.darkCharcoal)
                 |> shift ( 100, -200 )
+
+        pausedTxt : Collage msg
+        pausedTxt =
+            fromString "PAUSED"
+                |> size huge
+                |> color Color.black
+                |> rendered
+
+        maybePaused : List (Collage msg)
+        maybePaused =
+            if model.paused then
+                [ pausedTxt ]
+
+            else
+                []
     in
-    group [ boardRect, snek, food ] |> svg
+    svg <| group <| (maybePaused ++ [ boardRect, snek, food ])
 
 
 drawSnakeSegment : Point -> Collage msg
