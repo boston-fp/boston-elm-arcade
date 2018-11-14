@@ -1,11 +1,11 @@
 module Games.Snake.Board exposing (height, width)
 
 
-height : Float
+height : Int
 height =
-    700
-
-
-width : Float
-width =
     500
+
+
+width : Int
+width =
+    700

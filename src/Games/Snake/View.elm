@@ -6,7 +6,7 @@ import Collage.Render exposing (svg)
 import Collage.Text exposing (..)
 import Color
 import Games.Snake.Board as Board
-import Games.Snake.Model as Model exposing (Model)
+import Games.Snake.Model as Model exposing (Model, Point, Snek, snek2List)
 import Html exposing (Html)
 
 
@@ -20,12 +20,12 @@ view model =
     let
         boardRect : Collage msg
         boardRect =
-            rectangle Board.width Board.height
+            rectangle (toFloat Board.width) (toFloat Board.height)
                 |> outlined (solid 2 (uniform Color.black))
 
         snek : Collage msg
         snek =
-            model.body |> List.map drawSnakeSegment |> group
+            model.snek |> snek2List |> List.map drawSnakeSegment |> group
 
         food : Collage msg
         food =
@@ -49,7 +49,7 @@ view model =
 
         maybeFullscreenText : List (Collage msg)
         maybeFullscreenText =
-            if Model.isDed (Debug.log "snekBody" model.body) then
+            if Model.isDed (Debug.log "snekBody" model.snek) then
                 [ dedText ]
 
             else if model.paused then
@@ -65,4 +65,4 @@ drawSnakeSegment : Point -> Collage msg
 drawSnakeSegment ( x, y ) =
     square snakeSegmentSize
         |> styled ( uniform Color.green, solid 2 <| uniform Color.black )
-        |> shift ( x, y )
+        |> shift ( toFloat x, toFloat y )

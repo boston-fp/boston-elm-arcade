@@ -2,7 +2,14 @@ module Games.Snake.Update exposing (Msg(..), subs, update)
 
 import Browser.Events
 import Games.Snake.Board as Board
-import Games.Snake.Model as Model exposing (Model, Point)
+import Games.Snake.Model as Model
+    exposing
+        ( Model
+        , Point
+        , Snek
+        , snek2List
+        , snekMap
+        )
 import Json.Decode as Decode
 import Key
 import Time
@@ -22,11 +29,11 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         NewFrame delta ->
-            if model.paused || Model.isDed model.body then
+            if model.paused || Model.isDed model.snek then
                 model
 
             else
-                { model | body = moveSnake Up model.body }
+                { model | snek = moveSnek Up model.snek }
 
         KeyPressed key ->
             case key of
@@ -44,10 +51,11 @@ type Direction
     | Down
 
 
-moveSnake : Direction -> List Point -> List Point
-moveSnake direction =
-    List.map
-        (\( x, y ) ->
+moveSnek : Direction -> Snek -> Snek
+moveSnek direction =
+    let
+        move : Point -> Point
+        move ( x, y ) =
             case direction of
                 Left ->
                     ( x - 1, y )
@@ -60,7 +68,8 @@ moveSnake direction =
 
                 Down ->
                     ( x, y - 1 )
-        )
+    in
+    snekMap move
 
 
 subs : Model -> Sub Msg
