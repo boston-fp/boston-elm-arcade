@@ -1,7 +1,8 @@
 module Games.Snake.Update exposing (Msg(..), subs, update)
 
 import Browser.Events
-import Games.Snake.Model exposing (Model, Point)
+import Games.Snake.Board as Board
+import Games.Snake.Model as Model exposing (Model, Point)
 import Json.Decode as Decode
 import Key
 import Time
@@ -21,7 +22,7 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         NewFrame delta ->
-            if model.paused then
+            if model.paused || Model.isDed model.body then
                 model
 
             else

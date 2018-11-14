@@ -1,22 +1,40 @@
-module Tests exposing (..)
+module Tests exposing (all)
 
-import Test exposing (..)
 import Expect
-
-
--- Check out http://package.elm-lang.org/packages/elm-community/elm-test/latest to learn more about testing in Elm!
+import Games.Snake.Board as Board
+import Games.Snake.Model as SnekModel
+import Test exposing (..)
 
 
 all : Test
 all =
-    describe "A Test Suite"
-        [ test "Addition" <|
+    describe "isDed"
+        [ test "when in bounds" <|
             \_ ->
-                Expect.equal 10 (3 + 7)
-        , test "String.left" <|
+                let
+                    testSnek =
+                        [ ( 0, 0 ) ]
+                in
+                Expect.false "Snek should not be ded, but is ded" <| SnekModel.isDed testSnek
+        , test "when out of bounds x" <|
             \_ ->
-                Expect.equal "a" (String.left 1 "abcdefg")
-        , test "This test should fail" <|
+                let
+                    testSnek =
+                        [ ( Board.width / 2 + 100, 0 ) ]
+                in
+                Expect.true "Snek to be ded, but is alive" <| SnekModel.isDed (Debug.log "testSnek" testSnek)
+        , test "when out of bounds y" <|
             \_ ->
-                Expect.fail "failed as expected!"
+                let
+                    testSnek =
+                        [ ( 0, Board.height / 2 + 100 ) ]
+                in
+                Expect.true "Snek to be ded, but is alive" <| SnekModel.isDed (Debug.log "testSnek" testSnek)
+        , test "when out of bounds below" <|
+            \_ ->
+                let
+                    testSnek =
+                        [ ( 0, -Board.height / 2 - 100 ) ]
+                in
+                Expect.true "Snek to be ded, but is alive" <| SnekModel.isDed (Debug.log "testSnek" testSnek)
         ]

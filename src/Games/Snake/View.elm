@@ -5,19 +5,9 @@ import Collage.Layout exposing (..)
 import Collage.Render exposing (svg)
 import Collage.Text exposing (..)
 import Color
-import Games.Snake.Model exposing (Model)
-import Games.Snake.Update exposing (Msg(..))
+import Games.Snake.Board as Board
+import Games.Snake.Model as Model exposing (Model)
 import Html exposing (Html)
-
-
-boardHeight : Float
-boardHeight =
-    700
-
-
-boardWidth : Float
-boardWidth =
-    500
 
 
 snakeSegmentSize : Float
@@ -30,7 +20,7 @@ view model =
     let
         boardRect : Collage msg
         boardRect =
-            rectangle boardWidth boardHeight
+            rectangle Board.width Board.height
                 |> outlined (solid 2 (uniform Color.black))
 
         snek : Collage msg
@@ -50,19 +40,29 @@ view model =
                 |> color Color.black
                 |> rendered
 
-        maybePaused : List (Collage msg)
-        maybePaused =
-            if model.paused then
+        dedText : Collage msg
+        dedText =
+            fromString "DED"
+                |> size (huge * 4)
+                |> color Color.black
+                |> rendered
+
+        maybeFullscreenText : List (Collage msg)
+        maybeFullscreenText =
+            if Model.isDed (Debug.log "snekBody" model.body) then
+                [ dedText ]
+
+            else if model.paused then
                 [ pausedTxt ]
 
             else
                 []
     in
-    svg <| group <| (maybePaused ++ [ boardRect, snek, food ])
+    svg <| group <| (maybeFullscreenText ++ [ boardRect, snek, food ])
 
 
 drawSnakeSegment : Point -> Collage msg
 drawSnakeSegment ( x, y ) =
     square snakeSegmentSize
         |> styled ( uniform Color.green, solid 2 <| uniform Color.black )
-        |> shift ( x * snakeSegmentSize, y * snakeSegmentSize )
+        |> shift ( x, y )
