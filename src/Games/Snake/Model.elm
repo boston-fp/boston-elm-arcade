@@ -27,6 +27,7 @@ type alias Model =
     { snek : Snek
     , foodPosition : Point
     , paused : Bool
+    , timeSinceLastDraw : Float
     }
 
 
@@ -35,6 +36,7 @@ init =
     { snek = Snek ( 0, 0 ) []
     , foodPosition = ( 10, 0 )
     , paused = False
+    , timeSinceLastDraw = 0
     }
 
 

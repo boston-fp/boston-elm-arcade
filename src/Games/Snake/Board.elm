@@ -3,9 +3,9 @@ module Games.Snake.Board exposing (height, width)
 
 height : Int
 height =
-    500
+    50
 
 
 width : Int
 width =
-    700
+    70

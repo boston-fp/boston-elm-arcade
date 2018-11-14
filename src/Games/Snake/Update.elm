@@ -22,23 +22,37 @@ type Msg
 
 deltaThreshold : Float
 deltaThreshold =
-    100
+    30
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
         NewFrame delta ->
+            let
+                totalDelta =
+                    model.timeSinceLastDraw + delta
+            in
             if model.paused || Model.isDed model.snek then
-                model
+                { model | timeSinceLastDraw = totalDelta }
+
+            else if totalDelta > deltaThreshold then
+                { model
+                    | snek = moveSnek Up model.snek
+                    , timeSinceLastDraw = 0
+                }
 
             else
-                { model | snek = moveSnek Up model.snek }
+                { model | timeSinceLastDraw = totalDelta }
 
         KeyPressed key ->
             case key of
                 Key.Space ->
-                    { model | paused = not model.paused }
+                    if Model.isDed model.snek then
+                        Model.init
+
+                    else
+                        { model | paused = not model.paused }
 
                 _ ->
                     model

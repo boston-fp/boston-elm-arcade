@@ -15,12 +15,22 @@ snakeSegmentSize =
     10
 
 
+gamePointToViewPoint : Point -> ( Float, Float )
+gamePointToViewPoint ( x, y ) =
+    ( gameCoordToViewCoord x, gameCoordToViewCoord y )
+
+
+gameCoordToViewCoord : Int -> Float
+gameCoordToViewCoord val =
+    toFloat val * snakeSegmentSize
+
+
 view : Model -> Html msg
 view model =
     let
         boardRect : Collage msg
         boardRect =
-            rectangle (toFloat Board.width) (toFloat Board.height)
+            rectangle (gameCoordToViewCoord Board.width) (gameCoordToViewCoord Board.height)
                 |> outlined (solid 2 (uniform Color.black))
 
         snek : Collage msg
@@ -62,7 +72,7 @@ view model =
 
 
 drawSnakeSegment : Point -> Collage msg
-drawSnakeSegment ( x, y ) =
+drawSnakeSegment point =
     square snakeSegmentSize
         |> styled ( uniform Color.green, solid 2 <| uniform Color.black )
-        |> shift ( toFloat x, toFloat y )
+        |> shift (gamePointToViewPoint point)
