@@ -77,7 +77,14 @@ update msg model =
 
 noGame : Model -> Html Msg
 noGame model =
-    E.layout [ E.centerX, E.centerY ] <|
+    E.layout
+        [ E.centerX
+        , E.centerY
+        , Bg.color (E.rgb255 0 0 0)
+        , E.width E.fill
+        , E.height E.fill
+        ]
+    <|
         E.wrappedRow
             [ E.centerX, E.centerY, E.padding 10, E.spacing 10 ]
             (games

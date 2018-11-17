@@ -8,6 +8,7 @@ import Color
 import Games.Snake.Board as Board
 import Games.Snake.Model as Model exposing (Model, Point, Snek, snek2List)
 import Html exposing (Html)
+import Html.Attributes as Hattr
 
 
 snakeSegmentSize : Float
@@ -31,7 +32,7 @@ view model =
         boardRect : Collage msg
         boardRect =
             rectangle (gameCoordToViewCoord Board.width) (gameCoordToViewCoord Board.height)
-                |> outlined (solid 2 (uniform Color.black))
+                |> outlined (solid 2 (uniform Color.green))
 
         snek : Collage msg
         snek =
@@ -47,14 +48,14 @@ view model =
         pausedTxt =
             fromString "PAUSED"
                 |> size huge
-                |> color Color.black
+                |> color Color.yellow
                 |> rendered
 
         dedText : Collage msg
         dedText =
             fromString "DED"
                 |> size (huge * 4)
-                |> color Color.black
+                |> color Color.red
                 |> rendered
 
         maybeFullscreenText : List (Collage msg)
@@ -68,7 +69,15 @@ view model =
             else
                 []
     in
-    svg <| group <| (maybeFullscreenText ++ [ boardRect, snek, food ])
+    Html.div
+        [ Hattr.style "background-color" "black"
+        , Hattr.style "width" "100%"
+        , Hattr.style "height" "100vh"
+        , Hattr.style "display" "flex"
+        , Hattr.style "flex-direction" "column"
+        , Hattr.style "align-items" "center"
+        ]
+        [ svg <| group <| (maybeFullscreenText ++ [ boardRect, snek, food ]) ]
 
 
 drawSnakeSegment : Point -> Collage msg
