@@ -4,7 +4,8 @@ import Browser.Events
 import Games.Snake.Board as Board
 import Games.Snake.Model as Model
     exposing
-        ( Model
+        ( Direction(..)
+        , Model
         , Point
         , Snek
         , snek2List
@@ -22,7 +23,7 @@ type Msg
 
 deltaThreshold : Float
 deltaThreshold =
-    30
+    180
 
 
 update : Msg -> Model -> Model
@@ -39,7 +40,7 @@ update msg model =
             else if totalDelta > deltaThreshold then
                 let
                     nextSnek =
-                        moveSnek Up model.snek
+                        moveSnek model.durr model.snek
 
                     ded =
                         Model.isDed nextSnek
@@ -67,15 +68,36 @@ update msg model =
                     else
                         { model | paused = not model.paused }
 
+                Key.Up ->
+                    if model.durr /= Down then
+                        { model | durr = Up }
+
+                    else
+                        model
+
+                Key.Down ->
+                    if model.durr /= Up then
+                        { model | durr = Down }
+
+                    else
+                        model
+
+                Key.Left ->
+                    if model.durr /= Right then
+                        { model | durr = Model.Left }
+
+                    else
+                        model
+
+                Key.Right ->
+                    if model.durr /= Left then
+                        { model | durr = Right }
+
+                    else
+                        model
+
                 _ ->
                     model
-
-
-type Direction
-    = Left
-    | Right
-    | Up
-    | Down
 
 
 moveSnek : Direction -> Snek -> Snek

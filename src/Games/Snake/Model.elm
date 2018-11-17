@@ -1,5 +1,6 @@
 module Games.Snake.Model exposing
-    ( Model
+    ( Direction(..)
+    , Model
     , Point
     , Snek
     , init
@@ -29,6 +30,7 @@ type alias Model =
     , paused : Bool
     , timeSinceLastDraw : Float
     , fail : Bool
+    , durr : Direction
     }
 
 
@@ -39,6 +41,7 @@ init =
     , paused = False
     , timeSinceLastDraw = 0
     , fail = False
+    , durr = Up
     }
 
 
@@ -64,3 +67,10 @@ snek2List { head, rest } =
 snekMap : (Point -> Point) -> Snek -> Snek
 snekMap f snek =
     Snek (f snek.head) (List.map f snek.rest)
+
+
+type Direction
+    = Left
+    | Right
+    | Up
+    | Down
