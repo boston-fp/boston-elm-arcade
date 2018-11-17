@@ -26,6 +26,29 @@ gameCoordToViewCoord val =
     toFloat val * snakeSegmentSize
 
 
+grid : Collage msg
+grid =
+    let
+        lines : Int -> Int -> Collage msg
+        lines size length =
+            List.range (-size // 2) (size // 2)
+                |> List.map
+                    (\index ->
+                        let
+                            t =
+                                toFloat index * snakeSegmentSize
+                        in
+                        shiftY t <|
+                            traced (solid thin (uniform <| Color.rgb 40 40 40)) <|
+                                Collage.line <|
+                                    toFloat length
+                                        * snakeSegmentSize
+                    )
+                |> group
+    in
+    group [ lines Board.height Board.width, lines Board.width Board.height |> rotate (Basics.pi / 2) ]
+
+
 view : Model -> Html msg
 view model =
     let
@@ -60,7 +83,8 @@ view model =
 
         maybeFullscreenText : List (Collage msg)
         maybeFullscreenText =
-            if Model.isDed (Debug.log "snekBody" model.snek) then
+            -- if Model.isDed (Debug.log "snekBody" model.snek) then
+            if Model.isDed model.snek then
                 [ dedText ]
 
             else if model.paused then
@@ -70,14 +94,18 @@ view model =
                 []
     in
     Html.div
-        [ Hattr.style "background-color" "black"
+        [ Hattr.style "background-color" "rgb(20,20,20)"
         , Hattr.style "width" "100%"
         , Hattr.style "height" "100vh"
         , Hattr.style "display" "flex"
         , Hattr.style "flex-direction" "column"
         , Hattr.style "align-items" "center"
+        , Hattr.style "justify-content" "center"
         ]
-        [ svg <| group <| (maybeFullscreenText ++ [ boardRect, snek, food ]) ]
+        [ svg <|
+            group <|
+                (maybeFullscreenText ++ [ food, snek, boardRect, grid ])
+        ]
 
 
 drawSnakeSegment : Point -> Collage msg

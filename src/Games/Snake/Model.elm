@@ -46,7 +46,12 @@ isDed snek =
         ( x, y ) =
             snek.head
     in
-    x > (Board.width // 2) || x < (-Board.width // 2) || y > (Board.height // 2) || y < (-Board.height // 2)
+    List.any identity
+        [ x >= (Board.width // 2)
+        , x <= (-Board.width // 2)
+        , y >= (Board.height // 2)
+        , y <= (-Board.height // 2)
+        ]
 
 
 snek2List : Snek -> List Point
