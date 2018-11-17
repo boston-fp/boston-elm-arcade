@@ -28,6 +28,7 @@ type alias Model =
     , foodPosition : Point
     , paused : Bool
     , timeSinceLastDraw : Float
+    , fail : Bool
     }
 
 
@@ -37,6 +38,7 @@ init =
     , foodPosition = ( 10, 0 )
     , paused = False
     , timeSinceLastDraw = 0
+    , fail = False
     }
 
 

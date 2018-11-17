@@ -46,7 +46,10 @@ grid =
                     )
                 |> group
     in
-    group [ lines Board.height Board.width, lines Board.width Board.height |> rotate (Basics.pi / 2) ]
+    group
+        [ lines Board.height Board.width
+        , lines Board.width Board.height |> rotate (Basics.pi / 2)
+        ]
 
 
 view : Model -> Html msg
@@ -84,7 +87,7 @@ view model =
         maybeFullscreenText : List (Collage msg)
         maybeFullscreenText =
             -- if Model.isDed (Debug.log "snekBody" model.snek) then
-            if Model.isDed model.snek then
+            if model.fail then
                 [ dedText ]
 
             else if model.paused then
@@ -113,3 +116,4 @@ drawSnakeSegment point =
     square snakeSegmentSize
         |> styled ( uniform Color.green, solid 2 <| uniform Color.black )
         |> shift (gamePointToViewPoint point)
+        |> shift ( snakeSegmentSize / 2, snakeSegmentSize / 2 )

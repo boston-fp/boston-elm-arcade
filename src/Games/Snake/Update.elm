@@ -33,13 +33,26 @@ update msg model =
                 totalDelta =
                     model.timeSinceLastDraw + delta
             in
-            if model.paused || Model.isDed model.snek then
+            if model.paused || model.fail then
                 { model | timeSinceLastDraw = totalDelta }
 
             else if totalDelta > deltaThreshold then
+                let
+                    nextSnek =
+                        moveSnek Up model.snek
+
+                    ded =
+                        Model.isDed nextSnek
+                in
                 { model
-                    | snek = moveSnek Up model.snek
+                    | snek =
+                        if ded then
+                            model.snek
+
+                        else
+                            nextSnek
                     , timeSinceLastDraw = 0
+                    , fail = ded
                 }
 
             else
@@ -48,7 +61,7 @@ update msg model =
         KeyPressed key ->
             case key of
                 Key.Space ->
-                    if Model.isDed model.snek then
+                    if model.fail then
                         Model.init
 
                     else
@@ -89,6 +102,10 @@ moveSnek direction =
 subs : Model -> Sub Msg
 subs model =
     Sub.batch
-        [ Browser.Events.onAnimationFrameDelta NewFrame
+        [ if model.fail then
+            Sub.none
+
+          else
+            Browser.Events.onAnimationFrameDelta NewFrame
         , Browser.Events.onKeyDown (Decode.map KeyPressed Key.decoder)
         ]
