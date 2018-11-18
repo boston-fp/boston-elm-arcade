@@ -99,12 +99,4 @@ changeDurr model durrection =
         head =
             snek.head
     in
-    { model
-        | snek =
-            { snek
-                | head =
-                    { head
-                        | durrection = durrection
-                    }
-            }
-    }
+    { model | snek = { snek | head = { head | durrection = durrection } } }

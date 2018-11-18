@@ -71,8 +71,9 @@ view model =
         food : Collage msg
         food =
             square snakeSegmentSize
-                |> filled (uniform Color.darkCharcoal)
+                |> filled (uniform Color.yellow)
                 |> shift ( 100, -200 )
+                |> shift ( snakeSegmentSize / 2, snakeSegmentSize / 2 )
 
         pausedTxt : Collage msg
         pausedTxt =
