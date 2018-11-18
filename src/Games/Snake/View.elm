@@ -62,7 +62,11 @@ view model =
 
         snek : Collage msg
         snek =
-            model.snek |> snek2List |> List.map drawSnakeSegment |> group
+            group
+                (drawSnakeSegment Color.blue model.snek.head.location
+                    :: List.map (drawSnakeSegment Color.green << .location)
+                        model.snek.rest
+                )
 
         food : Collage msg
         food =
@@ -111,9 +115,9 @@ view model =
         ]
 
 
-drawSnakeSegment : Point -> Collage msg
-drawSnakeSegment point =
+drawSnakeSegment : Color.Color -> Point -> Collage msg
+drawSnakeSegment color point =
     square snakeSegmentSize
-        |> styled ( uniform Color.green, solid 2 <| uniform Color.black )
+        |> styled ( uniform color, solid 2 <| uniform Color.black )
         |> shift (gamePointToViewPoint point)
         |> shift ( snakeSegmentSize / 2, snakeSegmentSize / 2 )

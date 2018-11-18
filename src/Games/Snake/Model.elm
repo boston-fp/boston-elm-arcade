@@ -2,7 +2,9 @@ module Games.Snake.Model exposing
     ( Direction(..)
     , Model
     , Point
+    , Segment
     , Snek
+    , changeDurr
     , init
     , isDed
     , snek2List
@@ -19,8 +21,14 @@ type alias Point =
 
 
 type alias Snek =
-    { head : Point
-    , rest : List Point
+    { head : Segment
+    , rest : List Segment
+    }
+
+
+type alias Segment =
+    { location : Point
+    , durrection : Direction
     }
 
 
@@ -30,18 +38,24 @@ type alias Model =
     , paused : Bool
     , timeSinceLastDraw : Float
     , fail : Bool
-    , durr : Direction
     }
 
 
 init : Model
 init =
-    { snek = Snek ( 0, 0 ) []
+    { snek =
+        { head = Segment ( 0, 0 ) Left
+        , rest =
+            [ Segment ( 1, 0 ) Left
+            , Segment ( 2, 0 ) Left
+            , Segment ( 3, 0 ) Left
+            , Segment ( 4, 0 ) Left
+            ]
+        }
     , foodPosition = ( 10, 0 )
     , paused = False
     , timeSinceLastDraw = 0
     , fail = False
-    , durr = Up
     }
 
 
@@ -49,7 +63,7 @@ isDed : Snek -> Bool
 isDed snek =
     let
         ( x, y ) =
-            snek.head
+            snek.head.location
     in
     List.any identity
         [ x >= (Board.width // 2)
@@ -59,12 +73,12 @@ isDed snek =
         ]
 
 
-snek2List : Snek -> List Point
+snek2List : Snek -> List Segment
 snek2List { head, rest } =
     head :: rest
 
 
-snekMap : (Point -> Point) -> Snek -> Snek
+snekMap : (Segment -> Segment) -> Snek -> Snek
 snekMap f snek =
     Snek (f snek.head) (List.map f snek.rest)
 
@@ -74,3 +88,23 @@ type Direction
     | Right
     | Up
     | Down
+
+
+changeDurr : Model -> Direction -> Model
+changeDurr model durrection =
+    let
+        snek =
+            model.snek
+
+        head =
+            snek.head
+    in
+    { model
+        | snek =
+            { snek
+                | head =
+                    { head
+                        | durrection = durrection
+                    }
+            }
+    }

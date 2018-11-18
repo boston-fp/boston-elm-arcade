@@ -1,4 +1,4 @@
-module Games.Snake.Update exposing (Msg(..), subs, update)
+module Games.Snake.Update exposing (Msg(..), moveSnek, subs, update)
 
 import Browser.Events
 import Games.Snake.Board as Board
@@ -7,7 +7,9 @@ import Games.Snake.Model as Model
         ( Direction(..)
         , Model
         , Point
+        , Segment
         , Snek
+        , changeDurr
         , snek2List
         , snekMap
         )
@@ -40,7 +42,7 @@ update msg model =
             else if totalDelta > deltaThreshold then
                 let
                     nextSnek =
-                        moveSnek model.durr model.snek
+                        moveSnek model.snek
 
                     ded =
                         Model.isDed nextSnek
@@ -60,6 +62,13 @@ update msg model =
                 { model | timeSinceLastDraw = totalDelta }
 
         KeyPressed key ->
+            let
+                headDurr =
+                    model.snek.head.durrection
+
+                changeDurr_ =
+                    changeDurr model
+            in
             case key of
                 Key.Space ->
                     if model.fail then
@@ -69,29 +78,29 @@ update msg model =
                         { model | paused = not model.paused }
 
                 Key.Up ->
-                    if model.durr /= Down then
-                        { model | durr = Up }
+                    if headDurr /= Down then
+                        changeDurr_ Up
 
                     else
                         model
 
                 Key.Down ->
-                    if model.durr /= Up then
-                        { model | durr = Down }
+                    if headDurr /= Up then
+                        changeDurr_ Down
 
                     else
                         model
 
                 Key.Left ->
-                    if model.durr /= Right then
-                        { model | durr = Model.Left }
+                    if headDurr /= Right then
+                        changeDurr_ Left
 
                     else
                         model
 
                 Key.Right ->
-                    if model.durr /= Left then
-                        { model | durr = Right }
+                    if headDurr /= Left then
+                        changeDurr_ Right
 
                     else
                         model
@@ -100,25 +109,39 @@ update msg model =
                     model
 
 
-moveSnek : Direction -> Snek -> Snek
-moveSnek direction =
+moveSnek : Snek -> Snek
+moveSnek { head, rest } =
     let
-        move : Point -> Point
-        move ( x, y ) =
-            case direction of
+        moveSegment : Segment -> Segment
+        moveSegment segment =
+            let
+                ( x, y ) =
+                    segment.location
+            in
+            case segment.durrection of
                 Left ->
-                    ( x - 1, y )
+                    { segment | location = ( x - 1, y ) }
 
                 Right ->
-                    ( x + 1, y )
+                    { segment | location = ( x + 1, y ) }
 
                 Up ->
-                    ( x, y + 1 )
+                    { segment | location = ( x, y + 1 ) }
 
                 Down ->
-                    ( x, y - 1 )
+                    { segment | location = ( x, y - 1 ) }
+
+        setDurr : Direction -> Segment -> Segment
+        setDurr dir seg =
+            { seg | durrection = dir }
     in
-    snekMap move
+    { head = moveSegment head
+    , rest =
+        List.map2
+            (\parent seg -> moveSegment seg |> setDurr parent.durrection)
+            (head :: rest)
+            rest
+    }
 
 
 subs : Model -> Sub Msg
