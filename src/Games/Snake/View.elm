@@ -5,8 +5,9 @@ import Collage.Layout exposing (..)
 import Collage.Render exposing (svg)
 import Collage.Text exposing (..)
 import Color
-import Games.Snake.Board as Board
-import Games.Snake.Model as Model exposing (Model, Point, Snek, snek2List)
+import Games.Snake.Board as Board exposing (Point)
+import Games.Snake.Model as Model exposing (Model)
+import Games.Snake.Snek as Snek
 import Html exposing (Html)
 import Html.Attributes as Hattr
 

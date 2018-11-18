@@ -2,8 +2,9 @@ module Tests exposing (all)
 
 import Expect
 import Games.Snake.Board as Board
-import Games.Snake.Model as SnekModel exposing (Direction(..), Segment, changeDurr)
-import Games.Snake.Update exposing (moveSnek)
+import Games.Snake.Model as SnekModel
+import Games.Snake.Snek as Snek exposing (Direction(..), Segment)
+import Games.Snake.Update as SnekUpdate
 import Test exposing (..)
 
 
@@ -14,9 +15,9 @@ all =
             \_ ->
                 let
                     testSnek =
-                        SnekModel.init.snek
+                        Snek.init
                 in
-                Expect.equal (moveSnek testSnek)
+                Expect.equal (Snek.move testSnek)
                     { head = Segment ( -1, 0 ) Left
                     , rest =
                         [ Segment ( 0, 0 ) Left
@@ -28,7 +29,7 @@ all =
         , test "move up" <|
             \_ ->
                 let
-                    testSnek : SnekModel.Snek
+                    testSnek : Snek.Snek
                     testSnek =
                         { head = Segment ( 0, 0 ) Up
                         , rest =
@@ -39,7 +40,7 @@ all =
                             ]
                         }
                 in
-                Expect.equal (moveSnek testSnek)
+                Expect.equal (Snek.move testSnek)
                     { head = Segment ( 0, 1 ) Up
                     , rest =
                         [ Segment ( 0, 0 ) Up
