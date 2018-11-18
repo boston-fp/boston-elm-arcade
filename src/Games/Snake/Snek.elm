@@ -2,11 +2,14 @@ module Games.Snake.Snek exposing
     ( Direction(..)
     , Segment
     , Snek
+    , canHazBabby
     , changeDurr
+    , enhance
     , init
     , isDed
     , map
     , move
+    , oppositeDurr
     , toList
     )
 
@@ -33,6 +36,22 @@ type Direction
     | Down
 
 
+oppositeDurr : Direction -> Direction
+oppositeDurr durr =
+    case durr of
+        Left ->
+            Right
+
+        Right ->
+            Left
+
+        Up ->
+            Down
+
+        Down ->
+            Up
+
+
 changeDurr : Snek -> Direction -> Snek
 changeDurr snek durrection =
     let
@@ -42,27 +61,60 @@ changeDurr snek durrection =
     { snek | head = { head | durrection = durrection } }
 
 
+canHazBabby : Point -> Snek -> Bool
+canHazBabby babbyLoc { head } =
+    head.location == babbyLoc
+
+
+enhance : Snek -> Snek
+enhance snek =
+    let
+        lastSeg : Segment
+        lastSeg =
+            snek
+                |> toList
+                |> List.reverse
+                |> List.head
+                -- This should never happen, TODO: add error handling
+                |> Maybe.withDefault snek.head
+    in
+    { snek
+        | rest =
+            snek.rest
+                ++ [ Segment
+                        (movePoint
+                            (oppositeDurr lastSeg.durrection)
+                            lastSeg.location
+                        )
+                        lastSeg.durrection
+                   ]
+    }
+
+
+movePoint : Direction -> Point -> Point
+movePoint durrection ( x, y ) =
+    case durrection of
+        Left ->
+            ( x - 1, y )
+
+        Right ->
+            ( x + 1, y )
+
+        Up ->
+            ( x, y + 1 )
+
+        Down ->
+            ( x, y - 1 )
+
+
 move : Snek -> Snek
 move { head, rest } =
     let
         moveSegment : Segment -> Segment
         moveSegment segment =
-            let
-                ( x, y ) =
-                    segment.location
-            in
-            case segment.durrection of
-                Left ->
-                    { segment | location = ( x - 1, y ) }
-
-                Right ->
-                    { segment | location = ( x + 1, y ) }
-
-                Up ->
-                    { segment | location = ( x, y + 1 ) }
-
-                Down ->
-                    { segment | location = ( x, y - 1 ) }
+            { segment
+                | location = movePoint segment.durrection segment.location
+            }
 
         setDurr : Direction -> Segment -> Segment
         setDurr dir seg =

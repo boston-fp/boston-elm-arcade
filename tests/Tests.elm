@@ -14,6 +14,7 @@ all =
         [ test "simple" <|
             \_ ->
                 let
+                    testSnek : Snek.Snek
                     testSnek =
                         Snek.init
                 in

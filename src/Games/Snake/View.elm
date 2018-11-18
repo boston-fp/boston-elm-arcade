@@ -64,17 +64,14 @@ view model =
         snek : Collage msg
         snek =
             group
-                (drawSnakeSegment Color.blue model.snek.head.location
-                    :: List.map (drawSnakeSegment Color.green << .location)
+                (drawSquare Color.blue model.snek.head.location
+                    :: List.map (drawSquare Color.green << .location)
                         model.snek.rest
                 )
 
-        food : Collage msg
-        food =
-            square snakeSegmentSize
-                |> filled (uniform Color.yellow)
-                |> shift ( 100, -200 )
-                |> shift ( snakeSegmentSize / 2, snakeSegmentSize / 2 )
+        babby : Collage msg
+        babby =
+            drawSquare Color.yellow model.babbyPosition
 
         pausedTxt : Collage msg
         pausedTxt =
@@ -113,12 +110,12 @@ view model =
         ]
         [ svg <|
             group <|
-                (maybeFullscreenText ++ [ food, snek, boardRect, grid ])
+                (maybeFullscreenText ++ [ babby, snek, boardRect, grid ])
         ]
 
 
-drawSnakeSegment : Color.Color -> Point -> Collage msg
-drawSnakeSegment color point =
+drawSquare : Color.Color -> Point -> Collage msg
+drawSquare color point =
     square snakeSegmentSize
         |> styled ( uniform color, solid 2 <| uniform Color.black )
         |> shift (gamePointToViewPoint point)

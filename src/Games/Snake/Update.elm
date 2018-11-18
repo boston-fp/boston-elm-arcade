@@ -43,6 +43,9 @@ update msg model =
                         if ded then
                             model.snek
 
+                        else if Snek.canHazBabby model.babbyPosition nextSnek then
+                            Snek.enhance nextSnek
+
                         else
                             nextSnek
                     , timeSinceLastDraw = 0

@@ -6,7 +6,7 @@ import Games.Snake.Snek as Snek
 
 type alias Model =
     { snek : Snek.Snek
-    , foodPosition : Board.Point
+    , babbyPosition : Board.Point
     , paused : Bool
     , timeSinceLastDraw : Float
     , fail : Bool
@@ -16,7 +16,7 @@ type alias Model =
 init : Model
 init =
     { snek = Snek.init
-    , foodPosition = ( 10, 0 )
+    , babbyPosition = ( 10, 0 )
     , paused = False
     , timeSinceLastDraw = 0
     , fail = False
