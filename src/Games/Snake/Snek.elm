@@ -11,6 +11,7 @@ module Games.Snake.Snek exposing
     )
 
 import Games.Snake.Board as Board exposing (Point)
+import Set
 
 
 type alias Snek =
@@ -81,12 +82,18 @@ isDed snek =
     let
         ( x, y ) =
             snek.head.location
+
+        snekList =
+            toList snek
     in
     List.any identity
         [ x >= (Board.width // 2)
         , x <= (-Board.width // 2)
         , y >= (Board.height // 2)
         , y <= (-Board.height // 2)
+        , Set.size
+            (Set.fromList << List.map .location <| snekList)
+            /= List.length snekList
         ]
 
 
