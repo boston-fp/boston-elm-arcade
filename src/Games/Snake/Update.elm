@@ -3,7 +3,7 @@ module Games.Snake.Update exposing (Msg(..), subs, update)
 import Browser.Events
 import Games.Snake.Board as Board
 import Games.Snake.Model as Model exposing (Model)
-import Games.Snake.Snek as Snek exposing (Direction(..))
+import Games.Snake.Snek as Snek exposing (Direction(..), oppositeDurr)
 import Json.Decode as Decode
 import Key
 import Time
@@ -60,12 +60,17 @@ update msg model =
                 headDurr =
                     model.snek.head.durrection
 
-                changeDurr durr =
+                maybeChangeDurr : Direction -> Model
+                maybeChangeDurr durr =
                     let
                         snek =
                             model.snek
                     in
-                    { model | snek = Snek.changeDurr model.snek durr }
+                    if durr /= oppositeDurr durr then
+                        { model | snek = Snek.changeDurr model.snek durr }
+
+                    else
+                        model
             in
             case key of
                 Key.Space ->
@@ -76,32 +81,16 @@ update msg model =
                         { model | paused = not model.paused }
 
                 Key.Up ->
-                    if headDurr /= Down then
-                        changeDurr Up
-
-                    else
-                        model
+                    maybeChangeDurr Up
 
                 Key.Down ->
-                    if headDurr /= Up then
-                        changeDurr Down
-
-                    else
-                        model
+                    maybeChangeDurr Down
 
                 Key.Left ->
-                    if headDurr /= Right then
-                        changeDurr Left
-
-                    else
-                        model
+                    maybeChangeDurr Left
 
                 Key.Right ->
-                    if headDurr /= Left then
-                        changeDurr Right
-
-                    else
-                        model
+                    maybeChangeDurr Right
 
                 _ ->
                     model
