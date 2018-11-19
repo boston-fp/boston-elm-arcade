@@ -39,9 +39,20 @@ type alias Y =
     Float
 
 
-type Egg
-    = Egg Column Y
-    | Bomb Column Y
+type alias Egg =
+    { typ : EggType
+    , column : Column
+    , y : Y
+    }
+
+
+type EggType
+    = EggTypeEgg
+    | EggTypeBomb
+
+
+
+-- How many Y units an egg falls per millisecond.
 
 
 eggSpeed : Y_Per_Millisecond
@@ -49,34 +60,9 @@ eggSpeed =
     0.5
 
 
-eggCol : Egg -> Column
-eggCol egg =
-    case egg of
-        Egg col _ ->
-            col
-
-        Bomb col _ ->
-            col
-
-
-eggY : Egg -> Y
-eggY egg =
-    case egg of
-        Egg _ y ->
-            y
-
-        Bomb _ y ->
-            y
-
-
 eggFall : Milliseconds -> Egg -> Egg
 eggFall delta egg =
-    case egg of
-        Egg col y ->
-            Egg col (y - eggSpeed * delta)
-
-        Bomb col y ->
-            Bomb col (y - eggSpeed * delta)
+    { egg | y = egg.y - eggSpeed * delta }
 
 
 type Column
@@ -133,11 +119,14 @@ randomEgg seed0 =
 
         ( n, seed2 ) =
             Random.step (Random.int 0 9) seed1
+
+        type_ =
+            if n == 0 then
+                EggTypeBomb
+            else
+                EggTypeEgg
     in
-    if n == 0 then
-        ( Bomb col 400, seed2 )
-    else
-        ( Egg col 400, seed2 )
+    ( Egg type_ col 390, seed2 )
 
 
 randomCol : Random.Seed -> ( Column, Random.Seed )
@@ -200,15 +189,15 @@ viewEgg egg =
     Collage.circle 10
         |> Collage.filled
             (Collage.uniform
-                (case egg of
-                    Egg _ _ ->
+                (case egg.typ of
+                    EggTypeEgg ->
                         Color.yellow
 
-                    Bomb _ _ ->
+                    EggTypeBomb ->
                         Color.red
                 )
             )
-        |> Collage.shift ( colX (eggCol egg), eggY egg )
+        |> Collage.shift ( colX egg.column, egg.y )
 
 
 viewBackground : Collage.Collage msg
@@ -326,26 +315,17 @@ updateTick delta model =
             List.foldr
                 (\egg ( eggs, n ) ->
                     let
-                        y =
-                            eggY egg
-
                         egg1 =
                             eggFall delta egg
-
-                        y1 =
-                            eggY egg1
-
-                        col =
-                            eggCol egg
                     in
-                    if y1 <= -400 then
+                    if egg1.y <= -400 then
                         ( eggs, n )
-                    else if y > -300 && y1 <= -300 && col == model.basket then
-                        case egg1 of
-                            Egg _ _ ->
+                    else if egg.y > -300 && egg1.y <= -300 && egg.column == model.basket then
+                        case egg.typ of
+                            EggTypeEgg ->
                                 ( eggs, n + 1 )
 
-                            Bomb _ _ ->
+                            EggTypeBomb ->
                                 ( eggs, -model.score )
                     else
                         ( egg1 :: eggs, n )
@@ -359,16 +339,10 @@ updateTick delta model =
         ( eggs2, seed1 ) =
             if timer1 <= 0 then
                 let
-                    ( col, seed_ ) =
-                        randomCol model.seed
-
-                    ( n, seed3 ) =
-                        Random.step (Random.int 0 9) seed_
+                    ( newEgg, seed_ ) =
+                        randomEgg model.seed
                 in
-                if n == 0 then
-                    ( Bomb col 390 :: eggs1, seed3 )
-                else
-                    ( Egg col 390 :: eggs1, seed3 )
+                ( newEgg :: eggs1, seed_ )
             else
                 ( eggs1, model.seed )
 
