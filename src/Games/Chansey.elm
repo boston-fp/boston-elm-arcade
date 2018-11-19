@@ -14,8 +14,8 @@ type alias Model =
     { basket : Column
     , paddle : Maybe Paddle
     , eggs : List Egg
-    , eggsupply : List Egg
     , eggtimer : Milliseconds
+    , numeggs : Int -- Number of non-bomb eggs that have fallen
     , seed : Random.Seed
     , score : Int
     , paused : Bool
@@ -51,10 +51,8 @@ type EggType
     | EggTypeBomb
 
 
-
--- How many Y units an egg falls per millisecond.
-
-
+{-| How many Y units an egg falls per millisecond.
+-}
 eggSpeed : Y_Per_Millisecond
 eggSpeed =
     0.5
@@ -88,27 +86,6 @@ colX col =
 
         Right ->
             100
-
-
-replicateRandom :
-    Int
-    -> (Random.Seed -> ( a, Random.Seed ))
-    -> Random.Seed
-    -> ( List a, Random.Seed )
-replicateRandom n f seed0 =
-    case n of
-        0 ->
-            ( [], seed0 )
-
-        _ ->
-            let
-                ( x, seed1 ) =
-                    f seed0
-
-                ( xs, seed2 ) =
-                    replicateRandom (n - 1) f seed1
-            in
-            ( x :: xs, seed2 )
 
 
 randomEgg : Random.Seed -> ( Egg, Random.Seed )
@@ -150,16 +127,12 @@ type Msg
 
 init : Model
 init =
-    let
-        ( eggs, seed ) =
-            replicateRandom 100 randomEgg (Random.initialSeed 0)
-    in
     { basket = Center
     , paddle = Nothing
     , eggs = []
-    , eggsupply = eggs
     , eggtimer = 0
-    , seed = seed
+    , numeggs = 0
+    , seed = Random.initialSeed 0
     , score = 0
     , paused = False
     , lastkey = ""
@@ -336,15 +309,15 @@ updateTick delta model =
         timer1 =
             model.eggtimer - delta
 
-        ( eggs2, seed1 ) =
-            if timer1 <= 0 then
+        ( newEgg, seed1 ) =
+            if timer1 <= 0 && model.numeggs <= 99 then
                 let
-                    ( newEgg, seed_ ) =
+                    ( newEgg_, seed_ ) =
                         randomEgg model.seed
                 in
-                ( newEgg :: eggs1, seed_ )
+                ( Just newEgg_, seed_ )
             else
-                ( eggs1, model.seed )
+                ( Nothing, model.seed )
 
         ( timer2, seed2 ) =
             if timer1 <= 0 then
@@ -353,8 +326,26 @@ updateTick delta model =
                 ( timer1, seed1 )
     in
     { model
-        | eggs = eggs2
+        | eggs =
+            case newEgg of
+                Nothing ->
+                    eggs1
+
+                Just egg ->
+                    egg :: eggs1
         , eggtimer = timer2
+        , numeggs =
+            case newEgg of
+                Nothing ->
+                    model.numeggs
+
+                Just egg ->
+                    case egg.typ of
+                        EggTypeEgg ->
+                            model.numeggs + 1
+
+                        EggTypeBomb ->
+                            model.numeggs
         , seed = seed2
         , score = model.score + score
     }
