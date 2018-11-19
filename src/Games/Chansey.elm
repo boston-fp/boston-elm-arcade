@@ -8,7 +8,6 @@ import Color
 import Html exposing (Html)
 import Json.Decode
 import Random
-import Time
 
 
 type alias Model =
@@ -16,12 +15,20 @@ type alias Model =
     , paddle : Maybe Paddle
     , eggs : List Egg
     , eggsupply : List Egg
-    , eggtimer : Int
+    , eggtimer : Milliseconds
     , seed : Random.Seed
     , score : Int
     , paused : Bool
     , lastkey : String
     }
+
+
+type alias Milliseconds =
+    Float
+
+
+type alias Y_Per_Millisecond =
+    Float
 
 
 type alias X =
@@ -35,6 +42,11 @@ type alias Y =
 type Egg
     = Egg Column Y
     | Bomb Column Y
+
+
+eggSpeed : Y_Per_Millisecond
+eggSpeed =
+    0.5
 
 
 eggCol : Egg -> Column
@@ -57,14 +69,14 @@ eggY egg =
             y
 
 
-eggFall : Egg -> Egg
-eggFall egg =
+eggFall : Milliseconds -> Egg -> Egg
+eggFall delta egg =
     case egg of
         Egg col y ->
-            Egg col (y - 5)
+            Egg col (y - eggSpeed * delta)
 
         Bomb col y ->
-            Bomb col (y - 5)
+            Bomb col (y - eggSpeed * delta)
 
 
 type Column
@@ -142,10 +154,9 @@ randomCol seed =
 
 
 type Msg
-    = Tick Time.Posix
+    = Tick Milliseconds
     | Keydown String
     | Keyup String
-
 
 
 init : Model
@@ -209,8 +220,8 @@ viewBackground =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Tick _ ->
-            ( updateTick model, Cmd.none )
+        Tick delta ->
+            ( updateTick delta model, Cmd.none )
 
         Keydown "q" ->
             case model.paddle of
@@ -308,8 +319,8 @@ update msg model =
             ( model, Cmd.none )
 
 
-updateTick : Model -> Model
-updateTick model =
+updateTick : Milliseconds -> Model -> Model
+updateTick delta model =
     let
         ( eggs1, score ) =
             List.foldr
@@ -318,26 +329,35 @@ updateTick model =
                         y =
                             eggY egg
 
+                        egg1 =
+                            eggFall delta egg
+
+                        y1 =
+                            eggY egg1
+
                         col =
                             eggCol egg
                     in
-                    if y < -395 then
+                    if y1 <= -400 then
                         ( eggs, n )
-                    else if y < -290 && y > -300 && col == model.basket then
-                        case egg of
+                    else if y > -300 && y1 <= -300 && col == model.basket then
+                        case egg1 of
                             Egg _ _ ->
                                 ( eggs, n + 1 )
 
                             Bomb _ _ ->
                                 ( eggs, -model.score )
                     else
-                        ( eggFall egg :: eggs, n )
+                        ( egg1 :: eggs, n )
                 )
                 ( [], 0 )
                 model.eggs
 
+        timer1 =
+            model.eggtimer - delta
+
         ( eggs2, seed1 ) =
-            if model.eggtimer == 0 then
+            if timer1 <= 0 then
                 let
                     ( col, seed_ ) =
                         randomCol model.seed
@@ -346,21 +366,21 @@ updateTick model =
                         Random.step (Random.int 0 9) seed_
                 in
                 if n == 0 then
-                    ( Bomb col 400 :: eggs1, seed3 )
+                    ( Bomb col 390 :: eggs1, seed3 )
                 else
-                    ( Egg col 400 :: eggs1, seed3 )
+                    ( Egg col 390 :: eggs1, seed3 )
             else
                 ( eggs1, model.seed )
 
-        ( timer1, seed2 ) =
-            if model.eggtimer == 0 then
-                Random.step (Random.int 10 50) seed1
+        ( timer2, seed2 ) =
+            if timer1 <= 0 then
+                Random.step (Random.float 300 500) seed1
             else
-                ( model.eggtimer - 1, seed1 )
+                ( timer1, seed1 )
     in
     { model
         | eggs = eggs2
-        , eggtimer = timer1
+        , eggtimer = timer2
         , seed = seed2
         , score = model.score + score
     }
@@ -377,7 +397,7 @@ subscriptions model =
         [ if model.paused then
             Sub.none
           else
-            Time.every 10 Tick
+            Browser.Events.onAnimationFrameDelta Tick
         , Browser.Events.onKeyDown (Json.Decode.map Keydown keyDecoder)
         , Browser.Events.onKeyUp (Json.Decode.map Keyup keyDecoder)
         ]
