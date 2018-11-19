@@ -6,6 +6,7 @@ import Browser.Navigation as Nav
 import Element as E exposing (el, px, text)
 import Element.Background as Bg
 import Element.Input as Input exposing (button)
+import Games.Chansey as Chansey
 import Games.Platformer.Model as PlatformerModel
 import Games.Platformer.Update as PlatformerUpdate
 import Games.Platformer.View as PlatformerView
@@ -22,12 +23,14 @@ import Url.Parser exposing ((</>), Parser, oneOf, s)
 
 type Game
     = Snake
+    | Chansey
     | Platformer
 
 
 type GameState
     = NoGame
     | PlayingSnake SnakeModel.Model
+    | PlayingChansey Chansey.Model
     | PlayingPlatformer PlatformerModel.Model
 
 
@@ -48,13 +51,16 @@ gameName game =
         Snake ->
             "Snake"
 
+        Chansey ->
+            "Chansey"
+
         Platformer ->
             "Platformer"
 
 
 games : List Game
 games =
-    [ Snake, Platformer ]
+    [ Snake, Chansey, Platformer ]
 
 
 type alias Model =
@@ -75,6 +81,7 @@ urlToGameState url =
 
 type Msg
     = SnakeMsg SnakeUpdate.Msg
+    | ChanseyMsg Chansey.Msg
     | PlatformerMsg PlatformerUpdate.Msg
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
@@ -115,6 +122,22 @@ update msg model =
                                 (SnakeUpdate.update snakeMsg snakeModel)
                       }
                     , Cmd.none
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        ChanseyMsg chanseyMsg ->
+            case model.gameState of
+                PlayingChansey chanseyModel ->
+                    let
+                        ( newChanseyModel, cmd ) =
+                            Chansey.update chanseyMsg chanseyModel
+                    in
+                    ( { model
+                        | gameState = PlayingChansey newChanseyModel
+                      }
+                    , Cmd.map ChanseyMsg cmd
                     )
 
                 _ ->
@@ -186,6 +209,11 @@ view model =
                 (formatTitle (gameName Snake))
                 [ Html.map SnakeMsg (SnakeView.view snakeModel) ]
 
+        PlayingChansey chanseyModel ->
+            Browser.Document
+                (formatTitle (gameName Chansey))
+                [ Html.map ChanseyMsg (Chansey.view chanseyModel) ]
+
         PlayingPlatformer platformerModel ->
             Browser.Document
                 (formatTitle (gameName Platformer))
@@ -203,6 +231,7 @@ subscriptions model =
     -- is resolved
     Sub.batch
         [ SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg
+        , Chansey.subscriptions Chansey.init |> Sub.map ChanseyMsg
         , PlatformerUpdate.subs PlatformerModel.init |> Sub.map PlatformerMsg
         ]
 
