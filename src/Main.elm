@@ -80,7 +80,7 @@ noGame model =
     E.layout
         [ E.centerX
         , E.centerY
-        , Bg.color (E.rgb255 0 0 0)
+        , Bg.color (E.rgb255 20 20 20)
         , E.width E.fill
         , E.height E.fill
         ]
