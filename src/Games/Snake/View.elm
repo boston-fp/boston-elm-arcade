@@ -1,4 +1,4 @@
-module Games.Snake.View exposing (view)
+module Games.Snake.View exposing (debugInfo, drawSquare, gameCoordToViewCoord, gamePointToViewPoint, grid, snakeSegmentSize, view)
 
 import Collage exposing (..)
 import Collage.Layout exposing (..)
@@ -30,6 +30,9 @@ gameCoordToViewCoord val =
 grid : Collage msg
 grid =
     let
+        lineStyle =
+            solid thin (uniform <| Color.rgb 40 40 40)
+
         lines : Int -> Int -> Collage msg
         lines size length =
             List.range (-size // 2) (size // 2)
@@ -37,10 +40,10 @@ grid =
                     (\index ->
                         let
                             t =
-                                toFloat index * snakeSegmentSize
+                                toFloat (Debug.log "index" index) * snakeSegmentSize
                         in
                         shiftY t <|
-                            traced (solid thin (uniform <| Color.rgb 40 40 40)) <|
+                            traced lineStyle <|
                                 Collage.line <|
                                     toFloat length
                                         * snakeSegmentSize
@@ -58,7 +61,9 @@ view model =
     let
         boardRect : Collage msg
         boardRect =
-            rectangle (gameCoordToViewCoord Board.width) (gameCoordToViewCoord Board.height)
+            rectangle
+                (gameCoordToViewCoord Board.width)
+                (gameCoordToViewCoord Board.height)
                 |> outlined (solid 2 (uniform Color.green))
 
         snek : Collage msg
@@ -111,6 +116,7 @@ view model =
         [ svg <|
             group <|
                 (maybeFullscreenText ++ [ babby, snek, boardRect, grid ])
+        , debugInfo model
         ]
 
 
@@ -120,3 +126,9 @@ drawSquare color point =
         |> styled ( uniform color, solid 2 <| uniform Color.black )
         |> shift (gamePointToViewPoint point)
         |> shift ( snakeSegmentSize / 2, snakeSegmentSize / 2 )
+
+
+debugInfo : Model -> Html msg
+debugInfo model =
+    Html.div [ Hattr.style "color" "white" ]
+        [ Html.div [] [ Html.text "head position: ", Html.text <| Debug.toString model.snek.head ] ]
