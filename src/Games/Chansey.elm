@@ -2,21 +2,17 @@ module Games.Chansey exposing (..)
 
 import Browser
 import Browser.Events
-import Collage
-import Collage.Render
-import Color
-import Html exposing (Html)
 import Json.Decode
 import Random
+import RecurringTimer exposing (RecurringTimer)
 
 
 type alias Model =
     { basket : Column
     , paddle : Maybe Paddle
     , eggs : List Egg
-    , eggtimer : RecurringTimer
+    , eggtimer : EggTimer
     , numeggs : Int -- Number of non-bomb eggs that have fallen
-    , seed : Random.Seed
     , score : Int
     , paused : Bool
     , lastkey : String
@@ -47,41 +43,32 @@ type alias Egg =
     }
 
 
-type RecurringTimer
-    = RecurringTimer Random.Seed (Random.Generator Milliseconds) Milliseconds
+type EggTimer
+    = EggTimer Random.Seed RecurringTimer
 
 
-newRecurringTimer :
-    Random.Seed
-    -> Random.Generator Milliseconds
-    -> RecurringTimer
-newRecurringTimer seed0 gen =
-    let
-        ( time, seed1 ) =
-            Random.step gen seed0
-    in
-    RecurringTimer seed1 gen time
+type EggTimerStep
+    = EggTimerStep EggTimer
+    | EggTimerFire EggTimer Egg
 
 
-type RecurringTimerStep
-    = RecurringTimerStep RecurringTimer
-    | RecurringTimerFire RecurringTimer
+newEggTimer : Random.Seed -> RecurringTimer -> EggTimer
+newEggTimer =
+    EggTimer
 
 
-stepRecurringTimer : Milliseconds -> RecurringTimer -> RecurringTimerStep
-stepRecurringTimer delta (RecurringTimer seed0 gen time) =
-    let
-        time1 =
-            time - delta
-    in
-    if time1 <= 0 then
-        let
-            ( time2, seed1 ) =
-                Random.step gen seed0
-        in
-        RecurringTimerFire (RecurringTimer seed1 gen (time2 + time1))
-    else
-        RecurringTimerStep (RecurringTimer seed0 gen time1)
+stepEggTimer : Milliseconds -> EggTimer -> EggTimerStep
+stepEggTimer delta (EggTimer seed0 timer0) =
+    case RecurringTimer.step delta timer0 of
+        RecurringTimer.Step timer1 ->
+            EggTimerStep (EggTimer seed0 timer1)
+
+        RecurringTimer.Fire timer1 ->
+            let
+                ( egg, seed1 ) =
+                    randomEgg seed0
+            in
+            EggTimerFire (EggTimer seed1 timer1) egg
 
 
 {-| How many Y units an egg falls per millisecond.
@@ -178,53 +165,16 @@ init =
     { basket = Center
     , paddle = Nothing
     , eggs = []
-    , eggtimer = newRecurringTimer (Random.initialSeed 2) (Random.float 100 300)
+    , eggtimer =
+        newEggTimer
+            (Random.initialSeed 1)
+            (RecurringTimer.newWithJitter (Random.initialSeed 2) (Random.float 100 300))
     , numeggs = 0
-    , seed = Random.initialSeed 1
     , score = 0
     , paused = False
     , lastkey = ""
     , done = False
     }
-
-
-view : Model -> Html Msg
-view model =
-    Html.div
-        []
-        [ (Collage.Render.svg << Collage.group)
-            (viewBasket model.basket :: List.map viewEgg model.eggs ++ [ viewBackground ])
-        , Html.text (String.fromInt model.score)
-        ]
-
-
-viewBasket : Column -> Collage.Collage msg
-viewBasket basket =
-    Collage.circle 15
-        |> Collage.filled (Collage.uniform Color.blue)
-        |> Collage.shift ( colX basket, -300 )
-
-
-viewEgg : Egg -> Collage.Collage msg
-viewEgg egg =
-    Collage.circle 10
-        |> Collage.filled
-            (Collage.uniform
-                (case egg.typ of
-                    EggTypeEgg ->
-                        Color.yellow
-
-                    EggTypeBomb ->
-                        Color.red
-                )
-            )
-        |> Collage.shift ( colX egg.column, egg.y )
-
-
-viewBackground : Collage.Collage msg
-viewBackground =
-    Collage.rectangle 400 800
-        |> Collage.filled (Collage.uniform Color.black)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -367,20 +317,16 @@ updateTick delta model =
                 { delta = delta, basket = model.basket }
                 model.eggs
 
-        ( eggtimer1, newEgg, seed1 ) =
-            case stepRecurringTimer delta model.eggtimer of
-                RecurringTimerStep eggtimer_ ->
-                    ( eggtimer_, Nothing, model.seed )
+        ( eggtimer1, newEgg ) =
+            case stepEggTimer delta model.eggtimer of
+                EggTimerStep eggtimer_ ->
+                    ( eggtimer_, Nothing )
 
-                RecurringTimerFire eggtimer_ ->
+                EggTimerFire eggtimer_ newEgg_ ->
                     if model.numeggs <= 99 then
-                        let
-                            ( newEgg_, seed_ ) =
-                                randomEgg model.seed
-                        in
-                        ( eggtimer_, Just newEgg_, seed_ )
+                        ( eggtimer_, Just newEgg_ )
                     else
-                        ( eggtimer_, Nothing, model.seed )
+                        ( eggtimer_, Nothing )
     in
     { model
         | eggs =
@@ -403,7 +349,6 @@ updateTick delta model =
 
                         EggTypeBomb ->
                             model.numeggs
-        , seed = seed1
         , score = model.score + List.sum (List.map eggTypeScore caught)
     }
 
