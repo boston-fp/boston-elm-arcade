@@ -66,7 +66,7 @@ update msg model =
                         snek =
                             model.snek
                     in
-                    if durr /= oppositeDurr durr then
+                    if durr /= oppositeDurr snek.head.durrection then
                         { model | snek = Snek.changeDurr model.snek durr }
 
                     else
