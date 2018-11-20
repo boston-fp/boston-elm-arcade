@@ -14,12 +14,13 @@ type alias Model =
     { basket : Column
     , paddle : Maybe Paddle
     , eggs : List Egg
-    , eggtimer : Milliseconds
+    , eggtimer : RecurringTimer
     , numeggs : Int -- Number of non-bomb eggs that have fallen
     , seed : Random.Seed
     , score : Int
     , paused : Bool
     , lastkey : String
+    , done : Bool
     }
 
 
@@ -46,16 +47,48 @@ type alias Egg =
     }
 
 
-type EggType
-    = EggTypeEgg
-    | EggTypeBomb
+type RecurringTimer
+    = RecurringTimer Random.Seed (Random.Generator Milliseconds) Milliseconds
+
+
+newRecurringTimer :
+    Random.Seed
+    -> Random.Generator Milliseconds
+    -> RecurringTimer
+newRecurringTimer seed0 gen =
+    let
+        ( time, seed1 ) =
+            Random.step gen seed0
+    in
+    RecurringTimer seed1 gen time
+
+
+type RecurringTimerStep
+    = RecurringTimerStep RecurringTimer
+    | RecurringTimerFire RecurringTimer
+
+
+stepRecurringTimer : Milliseconds -> RecurringTimer -> RecurringTimerStep
+stepRecurringTimer delta (RecurringTimer seed0 gen time) =
+    let
+        time1 =
+            time - delta
+    in
+    if time1 <= 0 then
+        let
+            ( time2, seed1 ) =
+                Random.step gen seed0
+        in
+        RecurringTimerFire (RecurringTimer seed1 gen (time2 + time1))
+    else
+        RecurringTimerStep (RecurringTimer seed0 gen time1)
 
 
 {-| How many Y units an egg falls per millisecond.
 -}
 eggSpeed : Y_Per_Millisecond
 eggSpeed =
-    0.5
+    0.8
 
 
 eggFall : Milliseconds -> Egg -> Egg
@@ -63,16 +96,25 @@ eggFall delta egg =
     { egg | y = egg.y - eggSpeed * delta }
 
 
+type EggType
+    = EggTypeEgg
+    | EggTypeBomb
+
+
+eggTypeScore : EggType -> Int
+eggTypeScore typ =
+    case typ of
+        EggTypeEgg ->
+            1
+
+        EggTypeBomb ->
+            -5
+
+
 type Column
     = Left
     | Center
     | Right
-
-
-type Paddle
-    = PaddleQ
-    | PaddleP
-    | PaddlePQ
 
 
 colX : Column -> X
@@ -86,6 +128,12 @@ colX col =
 
         Right ->
             100
+
+
+type Paddle
+    = PaddleL
+    | PaddleR
+    | PaddleLR
 
 
 randomEgg : Random.Seed -> ( Egg, Random.Seed )
@@ -130,12 +178,13 @@ init =
     { basket = Center
     , paddle = Nothing
     , eggs = []
-    , eggtimer = 0
+    , eggtimer = newRecurringTimer (Random.initialSeed 2) (Random.float 100 300)
     , numeggs = 0
-    , seed = Random.initialSeed 0
+    , seed = Random.initialSeed 1
     , score = 0
     , paused = False
     , lastkey = ""
+    , done = False
     }
 
 
@@ -146,7 +195,6 @@ view model =
         [ (Collage.Render.svg << Collage.group)
             (viewBasket model.basket :: List.map viewEgg model.eggs ++ [ viewBackground ])
         , Html.text (String.fromInt model.score)
-        , Html.text model.lastkey
         ]
 
 
@@ -190,18 +238,18 @@ update msg model =
                 Nothing ->
                     ( { model
                         | basket = Left
-                        , paddle = Just PaddleQ
+                        , paddle = Just PaddleL
                       }
                     , Cmd.none
                     )
 
-                Just PaddleQ ->
+                Just PaddleL ->
                     ( model, Cmd.none )
 
-                Just PaddleP ->
-                    ( { model | paddle = Just PaddlePQ }, Cmd.none )
+                Just PaddleR ->
+                    ( { model | paddle = Just PaddleLR }, Cmd.none )
 
-                Just PaddlePQ ->
+                Just PaddleLR ->
                     ( model, Cmd.none )
 
         Keydown "p" ->
@@ -209,18 +257,18 @@ update msg model =
                 Nothing ->
                     ( { model
                         | basket = Right
-                        , paddle = Just PaddleP
+                        , paddle = Just PaddleR
                       }
                     , Cmd.none
                     )
 
-                Just PaddleQ ->
-                    ( { model | paddle = Just PaddlePQ }, Cmd.none )
+                Just PaddleL ->
+                    ( { model | paddle = Just PaddleLR }, Cmd.none )
 
-                Just PaddleP ->
+                Just PaddleR ->
                     ( model, Cmd.none )
 
-                Just PaddlePQ ->
+                Just PaddleLR ->
                     ( model, Cmd.none )
 
         Keyup "q" ->
@@ -228,7 +276,7 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-                Just PaddleQ ->
+                Just PaddleL ->
                     ( { model
                         | paddle = Nothing
                         , basket = Center
@@ -236,12 +284,12 @@ update msg model =
                     , Cmd.none
                     )
 
-                Just PaddleP ->
+                Just PaddleR ->
                     ( model, Cmd.none )
 
-                Just PaddlePQ ->
+                Just PaddleLR ->
                     ( { model
-                        | paddle = Just PaddleP
+                        | paddle = Just PaddleR
                         , basket = Right
                       }
                     , Cmd.none
@@ -252,10 +300,10 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-                Just PaddleQ ->
+                Just PaddleL ->
                     ( model, Cmd.none )
 
-                Just PaddleP ->
+                Just PaddleR ->
                     ( { model
                         | paddle = Nothing
                         , basket = Center
@@ -263,9 +311,9 @@ update msg model =
                     , Cmd.none
                     )
 
-                Just PaddlePQ ->
+                Just PaddleLR ->
                     ( { model
-                        | paddle = Just PaddleQ
+                        | paddle = Just PaddleL
                         , basket = Left
                       }
                     , Cmd.none
@@ -281,59 +329,68 @@ update msg model =
             ( model, Cmd.none )
 
 
+{-| Step eggs forward by a frame. Return the eggs remaining and the eggs caught
+(which, if the speed is not set insanely high, should have at most one element).
+-}
+stepEggs :
+    { delta : Milliseconds, basket : Column }
+    -> List Egg
+    -> { remaining : List Egg, caught : List EggType }
+stepEggs { delta, basket } =
+    let
+        step :
+            Egg
+            -> { remaining : List Egg, caught : List EggType }
+            -> { remaining : List Egg, caught : List EggType }
+        step egg { remaining, caught } =
+            let
+                egg1 =
+                    eggFall delta egg
+            in
+            if egg1.y <= -400 then
+                { remaining = remaining, caught = caught }
+            else if egg.y > -300 && egg1.y <= -300 && egg.column == basket then
+                { remaining = remaining, caught = egg.typ :: caught }
+            else
+                { remaining = egg1 :: remaining, caught = caught }
+    in
+    List.foldr
+        step
+        { remaining = [], caught = [] }
+
+
 updateTick : Milliseconds -> Model -> Model
 updateTick delta model =
     let
-        ( eggs1, score ) =
-            List.foldr
-                (\egg ( eggs, n ) ->
-                    let
-                        egg1 =
-                            eggFall delta egg
-                    in
-                    if egg1.y <= -400 then
-                        ( eggs, n )
-                    else if egg.y > -300 && egg1.y <= -300 && egg.column == model.basket then
-                        case egg.typ of
-                            EggTypeEgg ->
-                                ( eggs, n + 1 )
-
-                            EggTypeBomb ->
-                                ( eggs, -model.score )
-                    else
-                        ( egg1 :: eggs, n )
-                )
-                ( [], 0 )
+        { remaining, caught } =
+            stepEggs
+                { delta = delta, basket = model.basket }
                 model.eggs
 
-        timer1 =
-            model.eggtimer - delta
+        ( eggtimer1, newEgg, seed1 ) =
+            case stepRecurringTimer delta model.eggtimer of
+                RecurringTimerStep eggtimer_ ->
+                    ( eggtimer_, Nothing, model.seed )
 
-        ( newEgg, seed1 ) =
-            if timer1 <= 0 && model.numeggs <= 99 then
-                let
-                    ( newEgg_, seed_ ) =
-                        randomEgg model.seed
-                in
-                ( Just newEgg_, seed_ )
-            else
-                ( Nothing, model.seed )
-
-        ( timer2, seed2 ) =
-            if timer1 <= 0 then
-                Random.step (Random.float 300 500) seed1
-            else
-                ( timer1, seed1 )
+                RecurringTimerFire eggtimer_ ->
+                    if model.numeggs <= 99 then
+                        let
+                            ( newEgg_, seed_ ) =
+                                randomEgg model.seed
+                        in
+                        ( eggtimer_, Just newEgg_, seed_ )
+                    else
+                        ( eggtimer_, Nothing, model.seed )
     in
     { model
         | eggs =
             case newEgg of
                 Nothing ->
-                    eggs1
+                    remaining
 
                 Just egg ->
-                    egg :: eggs1
-        , eggtimer = timer2
+                    egg :: remaining
+        , eggtimer = eggtimer1
         , numeggs =
             case newEgg of
                 Nothing ->
@@ -346,8 +403,8 @@ updateTick delta model =
 
                         EggTypeBomb ->
                             model.numeggs
-        , seed = seed2
-        , score = model.score + score
+        , seed = seed1
+        , score = model.score + List.sum (List.map eggTypeScore caught)
     }
 
 
