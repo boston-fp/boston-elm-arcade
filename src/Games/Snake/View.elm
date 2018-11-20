@@ -1,4 +1,4 @@
-module Games.Snake.View exposing (debugInfo, drawSquare, gameCoordToViewCoord, gamePointToViewPoint, grid, snakeSegmentSize, view)
+module Games.Snake.View exposing (drawSquare, gameCoordToViewCoord, gamePointToViewPoint, grid, snakeSegmentSize, view)
 
 import Collage exposing (..)
 import Collage.Layout exposing (..)
@@ -115,7 +115,6 @@ view model =
         [ svg <|
             group <|
                 (maybeFullscreenText ++ [ babby, snek, boardRect, grid ])
-        , debugInfo model
         ]
 
 
@@ -124,9 +123,3 @@ drawSquare color point =
     square snakeSegmentSize
         |> styled ( uniform color, solid 2 <| uniform Color.black )
         |> shift (gamePointToViewPoint point)
-
-
-debugInfo : Model -> Html msg
-debugInfo model =
-    Html.div [ Hattr.style "color" "white" ]
-        [ Html.div [] [ Html.text "head position: ", Html.text <| Debug.toString model.snek.head ] ]
