@@ -40,7 +40,7 @@ grid =
                     (\index ->
                         let
                             t =
-                                toFloat (Debug.log "index" index) * snakeSegmentSize
+                                toFloat index * snakeSegmentSize
                         in
                         shiftY t <|
                             traced lineStyle <|
@@ -62,8 +62,8 @@ view model =
         boardRect : Collage msg
         boardRect =
             rectangle
-                (gameCoordToViewCoord Board.width)
-                (gameCoordToViewCoord Board.height)
+                (gameCoordToViewCoord Board.width - 10 / 2)
+                (gameCoordToViewCoord Board.height - 10 / 2)
                 |> outlined (solid 2 (uniform Color.green))
 
         snek : Collage msg
@@ -94,7 +94,6 @@ view model =
 
         maybeFullscreenText : List (Collage msg)
         maybeFullscreenText =
-            -- if Model.isDed (Debug.log "snekBody" model.snek) then
             if model.fail then
                 [ dedText ]
 
@@ -125,7 +124,6 @@ drawSquare color point =
     square snakeSegmentSize
         |> styled ( uniform color, solid 2 <| uniform Color.black )
         |> shift (gamePointToViewPoint point)
-        |> shift ( snakeSegmentSize / 2, snakeSegmentSize / 2 )
 
 
 debugInfo : Model -> Html msg
