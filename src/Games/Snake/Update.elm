@@ -6,6 +6,7 @@ import Games.Snake.Model as Model exposing (Model)
 import Games.Snake.Snek as Snek exposing (Direction(..), oppositeDurr)
 import Json.Decode as Decode
 import Key
+import Random
 import Time
 
 
@@ -37,19 +38,31 @@ update msg model =
 
                     ded =
                         Snek.isDed nextSnek
+
+                    snekWillEet =
+                        Snek.canHazBabby model.babbyPosition nextSnek
+
+                    ( babbyPosition, seed ) =
+                        if snekWillEet then
+                            Random.step foodPointGen model.seed
+
+                        else
+                            ( model.babbyPosition, model.seed )
                 in
                 { model
                     | snek =
                         if ded then
                             model.snek
 
-                        else if Snek.canHazBabby model.babbyPosition nextSnek then
+                        else if snekWillEet then
                             Snek.enhance nextSnek
 
                         else
                             nextSnek
                     , timeSinceLastDraw = 0
                     , fail = ded
+                    , babbyPosition = babbyPosition
+                    , seed = seed
                 }
 
             else
@@ -106,3 +119,10 @@ subs model =
             Browser.Events.onAnimationFrameDelta NewFrame
         , Browser.Events.onKeyDown (Decode.map KeyPressed Key.decoder)
         ]
+
+
+foodPointGen : Random.Generator Board.Point
+foodPointGen =
+    Random.pair
+        (Random.int ((-Board.width // 2) + 1) ((Board.width // 2) - 1))
+        (Random.int ((-Board.height // 2) + 1) ((Board.height // 2) - 1))

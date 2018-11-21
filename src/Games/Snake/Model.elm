@@ -2,6 +2,7 @@ module Games.Snake.Model exposing (Model, init)
 
 import Games.Snake.Board as Board
 import Games.Snake.Snek as Snek
+import Random
 
 
 type alias Model =
@@ -10,6 +11,7 @@ type alias Model =
     , paused : Bool
     , timeSinceLastDraw : Float
     , fail : Bool
+    , seed : Random.Seed
     }
 
 
@@ -20,4 +22,5 @@ init =
     , paused = False
     , timeSinceLastDraw = 0
     , fail = False
+    , seed = Random.initialSeed 42
     }
