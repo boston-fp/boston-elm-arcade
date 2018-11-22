@@ -10,6 +10,7 @@ import Games.Snake.Update as SnakeUpdate
 import Games.Snake.View as SnakeView
 import Html exposing (Html)
 import Key
+import Ports
 import Time
 
 
@@ -72,7 +73,7 @@ update msg model =
                 newModel =
                     SnakeUpdate.update snakeMsg snakeModel
             in
-            ( PlayingSnake newModel, Cmd.none )
+            ( PlayingSnake newModel, Ports.setTitle <| gameName Snake )
 
 
 noGame : Model -> Html Msg
