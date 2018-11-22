@@ -12,6 +12,7 @@ type alias Model =
     , timeSinceLastDraw : Float
     , fail : Bool
     , seed : Random.Seed
+    , score : Int
     }
 
 
@@ -23,4 +24,5 @@ init =
     , timeSinceLastDraw = 0
     , fail = False
     , seed = Random.initialSeed 42
+    , score = 0
     }

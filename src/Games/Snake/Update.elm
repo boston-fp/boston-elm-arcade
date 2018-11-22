@@ -63,6 +63,12 @@ update msg model =
                     , fail = ded
                     , babbyPosition = babbyPosition
                     , seed = seed
+                    , score =
+                        if snekWillEet then
+                            model.score + 10
+
+                        else
+                            model.score
                 }
 
             else

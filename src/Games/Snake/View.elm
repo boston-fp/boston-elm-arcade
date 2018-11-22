@@ -115,7 +115,17 @@ view model =
         [ svg <|
             group <|
                 (maybeFullscreenText ++ [ babby, snek, boardRect, grid ])
+        , scoreView model.score
         ]
+
+
+scoreView : Int -> Html msg
+scoreView score =
+    Html.div
+        [ Hattr.style "color" "white"
+        , Hattr.style "font-size" "20px"
+        ]
+        [ Html.text <| "Babbies Eeten: " ++ String.fromInt score ]
 
 
 drawSquare : Color.Color -> Point -> Collage msg
