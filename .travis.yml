@@ -1,0 +1,23 @@
+language: node_js
+sudo: required
+node_js:
+  - "7"
+install:
+  - npm i create-elm-app -g
+
+jobs:
+  include:
+    - stage: "Test"
+      script: elm-app test
+
+    - stage: "Build"
+      script: elm-app build
+      deploy:
+        provider: pages
+        skip-cleanup: true
+        github-token: $GITHUB_TOKEN
+        keep-history: true
+        target-branch: gh-pages
+        local-dir: ./build
+        on:
+          branch: master
