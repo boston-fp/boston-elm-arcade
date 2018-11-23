@@ -2,6 +2,10 @@ language: node_js
 sudo: required
 node_js:
   - "7"
+cache:
+  directories:
+    - $HOME/.npm
+    - $HOME/.elm
 before_install:
   - uname -a # print the *exact* operating system/kernel version
   - | # build time improvement see: https://git.io/vQcqz
