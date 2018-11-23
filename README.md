@@ -1,4 +1,4 @@
-# Boston Elm Arcade
+# Boston Elm Arcade [![Build Status](https://travis-ci.org/weekly-functional-programming/boston-elm-arcade.svg?branch=master)](https://travis-ci.org/weekly-functional-programming/boston-elm-arcade)
 
 Games here are built by people at the Weekly Functional Programming Meetup or Elm Meetup in Boston!
 
