@@ -2,6 +2,17 @@ language: node_js
 sudo: required
 node_js:
   - "7"
+before_install:
+  - uname -a # print the *exact* operating system/kernel version
+  - | # build time improvement see: https://git.io/vQcqz
+    if [ ! -d sysconfcpus/bin ];
+    then
+      git clone https://github.com/obmarg/libsysconfcpus.git;
+      cd libsysconfcpus;
+      ./configure --prefix=$TRAVIS_BUILD_DIR/sysconfcpus;
+      make && make install;
+      cd ..;
+    fi
 install:
   - npm i create-elm-app -g
 
