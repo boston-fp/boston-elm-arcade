@@ -2,6 +2,7 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
 import Browser.Events
+import Browser.Navigation as Nav
 import Element as E exposing (el, px, text)
 import Element.Background as Bg
 import Element.Input as Input exposing (button)
@@ -10,13 +11,17 @@ import Games.Snake.Update as SnakeUpdate
 import Games.Snake.View as SnakeView
 import Html exposing (Html)
 import Key
-import Ports
 import Time
+import Url
 
 
-type Model
+type GameState
     = NoGame
     | PlayingSnake SnakeModel.Model
+
+
+type alias Model =
+    { navKey : Nav.Key, gameState : GameState }
 
 
 gameName : Game -> String
@@ -26,7 +31,7 @@ gameName game =
             "Snake"
 
 
-gameInit : Game -> Model
+gameInit : Game -> GameState
 gameInit game =
     case game of
         Snake ->
@@ -42,27 +47,41 @@ games =
     [ Snake ]
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( NoGame, Cmd.none )
+init : Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init url key =
+    ( { navKey = key, gameState = NoGame }, Cmd.none )
 
 
 type Msg
     = StartPlaying Game
     | SnakeMsg SnakeUpdate.Msg
+    | LinkClicked Browser.UrlRequest
+    | UrlChanged Url.Url
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        UrlChanged url ->
+            -- TODO: parse
+            ( model, Cmd.none )
+
+        LinkClicked req ->
+            case req of
+                Browser.Internal url ->
+                    ( model, Nav.pushUrl model.navKey (Url.toString url) )
+
+                Browser.External href ->
+                    ( model, Nav.load href )
+
         StartPlaying game ->
-            ( gameInit game, Ports.setTitle "Choose a Game!" )
+            ( { model | gameState = gameInit game }, Cmd.none )
 
         SnakeMsg snakeMsg ->
             let
                 snakeModel : SnakeModel.Model
                 snakeModel =
-                    case model of
+                    case model.gameState of
                         NoGame ->
                             SnakeModel.init
 
@@ -73,7 +92,7 @@ update msg model =
                 newModel =
                     SnakeUpdate.update snakeMsg snakeModel
             in
-            ( PlayingSnake newModel, Ports.setTitle <| gameName Snake )
+            ( { model | gameState = PlayingSnake newModel }, Cmd.none )
 
 
 noGame : Model -> Html Msg
@@ -104,14 +123,23 @@ noGame model =
             )
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    case model of
+    let
+        formatTitle : String -> String
+        formatTitle title =
+            "Boston Elm Arcade - " ++ title
+    in
+    case model.gameState of
         NoGame ->
-            noGame model
+            Browser.Document
+                (formatTitle "Choose a Game!")
+                [ noGame model ]
 
         PlayingSnake snakeModel ->
-            Html.map SnakeMsg (SnakeView.view snakeModel)
+            Browser.Document
+                (formatTitle (gameName Snake))
+                [ Html.map SnakeMsg (SnakeView.view snakeModel) ]
 
 
 
@@ -120,7 +148,7 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model of
+    case model.gameState of
         NoGame ->
             Sub.none
 
@@ -130,9 +158,11 @@ subscriptions model =
 
 main : Program () Model Msg
 main =
-    Browser.element
+    Browser.application
         { view = view
         , init = \_ -> init
         , update = update
         , subscriptions = subscriptions
+        , onUrlChange = UrlChanged
+        , onUrlRequest = LinkClicked
         }

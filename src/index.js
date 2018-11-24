@@ -7,7 +7,3 @@ const app = Elm.Main.init({
 });
 
 registerServiceWorker();
-
-app.ports.setTitle.subscribe(gameName => {
-  document.title = `${gameName} - Boston Elm Arcade`
-})

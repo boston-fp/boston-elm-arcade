@@ -1,7 +1,4 @@
-body > div {
-  width: 100%;
-  height: 100vh;
-}
+/** If you want to add plain ol' css, do it here! **/
 
 body {
   margin: 0;
