@@ -17,7 +17,7 @@ type Msg
 
 deltaThreshold : Float
 deltaThreshold =
-    180
+    120
 
 
 update : Msg -> Model -> Model
