@@ -13,6 +13,11 @@ import Html exposing (Html)
 import Key
 import Time
 import Url
+import Url.Parser exposing ((</>), Parser, oneOf, s)
+
+
+type Game
+    = Snake
 
 
 type GameState
@@ -20,8 +25,12 @@ type GameState
     | PlayingSnake SnakeModel.Model
 
 
-type alias Model =
-    { navKey : Nav.Key, gameState : GameState }
+gameStateParser : Parser (GameState -> a) a
+gameStateParser =
+    oneOf
+        [ Url.Parser.map NoGame Url.Parser.top
+        , Url.Parser.map (PlayingSnake SnakeModel.init) (s (gameName Snake))
+        ]
 
 
 gameName : Game -> String
@@ -38,23 +47,27 @@ gameInit game =
             PlayingSnake SnakeModel.init
 
 
-type Game
-    = Snake
-
-
 games : List Game
 games =
     [ Snake ]
 
 
+type alias Model =
+    { navKey : Nav.Key, gameState : GameState }
+
+
 init : Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init url key =
-    ( { navKey = key, gameState = NoGame }, Cmd.none )
+    ( { navKey = key, gameState = urlToGameState url }, Cmd.none )
+
+
+urlToGameState : Url.Url -> GameState
+urlToGameState url =
+    Url.Parser.parse gameStateParser url |> Maybe.withDefault NoGame
 
 
 type Msg
-    = StartPlaying Game
-    | SnakeMsg SnakeUpdate.Msg
+    = SnakeMsg SnakeUpdate.Msg
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
 
@@ -63,8 +76,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UrlChanged url ->
-            -- TODO: parse
-            ( model, Cmd.none )
+            ( { model | gameState = urlToGameState url }, Cmd.none )
 
         LinkClicked req ->
             case req of
@@ -73,9 +85,6 @@ update msg model =
 
                 Browser.External href ->
                     ( model, Nav.load href )
-
-        StartPlaying game ->
-            ( { model | gameState = gameInit game }, Cmd.none )
 
         SnakeMsg snakeMsg ->
             let
@@ -95,6 +104,11 @@ update msg model =
             ( { model | gameState = PlayingSnake newModel }, Cmd.none )
 
 
+gameUrl : Game -> String
+gameUrl game =
+    "/" ++ gameName game
+
+
 noGame : Model -> Html Msg
 noGame model =
     E.layout
@@ -111,11 +125,11 @@ noGame model =
                 |> List.map
                     (\game ->
                         el []
-                            (Input.button
+                            (E.link
                                 [ Bg.color (E.rgb255 85 131 200)
                                 , E.padding 10
                                 ]
-                                { onPress = Just (StartPlaying game)
+                                { url = gameUrl game
                                 , label = text (gameName game)
                                 }
                             )
