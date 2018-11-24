@@ -1,1 +1,0 @@
-{"version":3,"sources":["main.css"],"names":[],"mappings":"AAAA,SACE,WACA,YAAc,CAGhB,KACE,QAAU,C","file":"static/css/main.ce049688.chunk.css","sourcesContent":["body > div {\n  width: 100%;\n  height: 100vh;\n}\n\nbody {\n  margin: 0;\n}\n"],"sourceRoot":""}
