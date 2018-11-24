@@ -56,7 +56,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         StartPlaying game ->
-            ( gameInit game, Cmd.none )
+            ( gameInit game, Ports.setTitle "Choose a Game!" )
 
         SnakeMsg snakeMsg ->
             let
