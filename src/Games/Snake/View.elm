@@ -112,7 +112,12 @@ view model =
         , Hattr.style "align-items" "center"
         , Hattr.style "justify-content" "center"
         ]
-        [ svg <|
+        [ Html.div
+            [ Hattr.style "font-size" "40px"
+            , Hattr.style "color" "white"
+            ]
+            [ Html.text "SNEK" ]
+        , svg <|
             group <|
                 (maybeFullscreenText ++ [ babby, snek, boardRect, grid ])
         , scoreView model.score
