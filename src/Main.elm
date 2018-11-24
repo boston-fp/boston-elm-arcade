@@ -106,7 +106,7 @@ update msg model =
 
 gameUrl : Game -> String
 gameUrl game =
-    "/" ++ gameName game
+    "%PUBLIC_URL%/" ++ gameName game
 
 
 noGame : Model -> Html Msg
