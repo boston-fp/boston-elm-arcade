@@ -13,6 +13,7 @@ type alias Model =
     , fail : Bool
     , seed : Random.Seed
     , score : Int
+    , queuedDurr : Snek.Direction
     }
 
 
@@ -25,4 +26,5 @@ init =
     , fail = False
     , seed = Random.initialSeed 42
     , score = 0
+    , queuedDurr = Snek.init.head.durrection
     }

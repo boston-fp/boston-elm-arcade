@@ -4,6 +4,7 @@ module Games.Snake.Snek exposing
     , Snek
     , canHazBabby
     , changeDurr
+    , durrection
     , enhance
     , init
     , isDed
@@ -36,6 +37,11 @@ type Direction
     | Down
 
 
+durrection : Snek -> Direction
+durrection snek =
+    snek.head.durrection
+
+
 oppositeDurr : Direction -> Direction
 oppositeDurr durr =
     case durr of
@@ -53,12 +59,12 @@ oppositeDurr durr =
 
 
 changeDurr : Snek -> Direction -> Snek
-changeDurr snek durrection =
+changeDurr snek durr =
     let
         head =
             snek.head
     in
-    { snek | head = { head | durrection = durrection } }
+    { snek | head = { head | durrection = durr } }
 
 
 canHazBabby : Point -> Snek -> Bool
@@ -92,8 +98,8 @@ enhance snek =
 
 
 movePoint : Direction -> Point -> Point
-movePoint durrection ( x, y ) =
-    case durrection of
+movePoint durr ( x, y ) =
+    case durr of
         Left ->
             ( x - 1, y )
 

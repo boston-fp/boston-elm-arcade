@@ -34,10 +34,15 @@ update msg model =
             else if totalDelta > deltaThreshold then
                 let
                     nextSnek =
-                        Snek.move model.snek
+                        if
+                            model.queuedDurr
+                                /= Snek.oppositeDurr
+                                    (Snek.durrection model.snek)
+                        then
+                            Snek.changeDurr model.snek model.queuedDurr |> Snek.move
 
-                    ded =
-                        Snek.isDed nextSnek
+                        else
+                            Snek.move model.snek
 
                     snekWillEet =
                         Snek.canHazBabby model.babbyPosition nextSnek
@@ -51,7 +56,7 @@ update msg model =
                 in
                 { model
                     | snek =
-                        if ded then
+                        if Snek.isDed nextSnek then
                             model.snek
 
                         else if snekWillEet then
@@ -60,7 +65,7 @@ update msg model =
                         else
                             nextSnek
                     , timeSinceLastDraw = 0
-                    , fail = ded
+                    , fail = Snek.isDed nextSnek
                     , babbyPosition = babbyPosition
                     , seed = seed
                     , score =
@@ -75,22 +80,6 @@ update msg model =
                 { model | timeSinceLastDraw = totalDelta }
 
         KeyPressed key ->
-            let
-                headDurr =
-                    model.snek.head.durrection
-
-                maybeChangeDurr : Direction -> Model
-                maybeChangeDurr durr =
-                    let
-                        snek =
-                            model.snek
-                    in
-                    if durr /= oppositeDurr snek.head.durrection then
-                        { model | snek = Snek.changeDurr model.snek durr }
-
-                    else
-                        model
-            in
             case key of
                 Key.Space ->
                     if model.fail then
@@ -100,16 +89,16 @@ update msg model =
                         { model | paused = not model.paused }
 
                 Key.Up ->
-                    maybeChangeDurr Up
+                    { model | queuedDurr = Up }
 
                 Key.Down ->
-                    maybeChangeDurr Down
+                    { model | queuedDurr = Down }
 
                 Key.Left ->
-                    maybeChangeDurr Left
+                    { model | queuedDurr = Left }
 
                 Key.Right ->
-                    maybeChangeDurr Right
+                    { model | queuedDurr = Right }
 
                 _ ->
                     model
