@@ -6,6 +6,7 @@ cache:
   directories:
     - $HOME/.npm
     - $HOME/.elm
+    - $HOME/.nvm
     - ./libsysconfcpus
 before_install:
   - uname -a # print the *exact* operating system/kernel version
