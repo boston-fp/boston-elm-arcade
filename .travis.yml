@@ -23,10 +23,10 @@ install:
 
 jobs:
   include:
-    - stage: "Test"
+    - name: "Test"
       script: elm-app test
 
-    - stage: "Build"
+    - name: "Build"
       script: elm-app build
       deploy:
         provider: pages
