@@ -11,6 +11,7 @@ import Games.Snake.Update as SnakeUpdate
 import Games.Snake.View as SnakeView
 import Html exposing (Html)
 import Key
+import Ports
 import Time
 import Url
 import Url.Parser exposing ((</>), Parser, oneOf, s)
@@ -29,7 +30,8 @@ gameStateParser : Parser (GameState -> a) a
 gameStateParser =
     oneOf
         [ Url.Parser.map NoGame Url.Parser.top
-        , Url.Parser.map (PlayingSnake SnakeModel.init) (s <| String.toLower <| gameName Snake)
+        , Url.Parser.map (PlayingSnake SnakeModel.init)
+            (s "%PUBLIC_URL%" </> (s <| String.toLower <| gameName Snake))
         ]
 
 
@@ -51,12 +53,16 @@ type alias Model =
 
 init : Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init url key =
-    ( { navKey = key, gameState = urlToGameState url }, Cmd.none )
+    ( { navKey = key, gameState = url |> stripBasePath |> urlToGameState }
+    , Cmd.none
+    )
 
 
 urlToGameState : Url.Url -> GameState
 urlToGameState url =
-    Url.Parser.parse gameStateParser url |> Maybe.withDefault NoGame
+    -- TODO: SWITCH ME BACK TO GAME MODE
+    Url.Parser.parse gameStateParser url
+        |> Maybe.withDefault (PlayingSnake SnakeModel.init)
 
 
 type Msg
@@ -65,11 +71,23 @@ type Msg
     | UrlChanged Url.Url
 
 
+stripBasePath : Url.Url -> Url.Url
+stripBasePath url =
+    { url
+        | -- This is a hack to work around github-pages and
+          -- parser not allowing us to parse the "/"
+          -- https://github.com/elm/url/issues/14
+          path = String.replace "%PUBLIC_URL%" "" url.path
+    }
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UrlChanged url ->
-            ( { model | gameState = urlToGameState url }, Cmd.none )
+            ( { model | gameState = url |> stripBasePath |> urlToGameState }
+            , Cmd.none
+            )
 
         LinkClicked req ->
             case req of
