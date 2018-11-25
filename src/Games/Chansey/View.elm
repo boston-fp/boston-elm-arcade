@@ -2,6 +2,7 @@ module Games.Chansey.View exposing (..)
 
 import Collage
 import Collage.Render
+import Collage.Text
 import Color
 import Games.Chansey exposing (..)
 import Games.Chansey.Basket as Basket
@@ -18,7 +19,9 @@ view model =
     Html.div
         []
         [ (Collage.Render.svg << Collage.group)
-            (Level.view model.level ++ [ viewBackground ])
+            [ Level.view model.level
+            , viewBackground
+            ]
         ]
 
 

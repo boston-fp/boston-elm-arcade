@@ -1,6 +1,6 @@
 module Games.Chansey.Level exposing (..)
 
-import Collage
+import Collage exposing (Collage)
 import Collage.Text
 import Color
 import Games.Chansey.Basket as Basket exposing (Basket)
@@ -9,6 +9,7 @@ import Games.Chansey.Egg as Egg exposing (Egg)
 import Games.Chansey.EggTimer as EggTimer exposing (EggTimer, EggTimerStep(..))
 import Games.Chansey.EggType as EggType exposing (EggType(..))
 import Games.Chansey.Types exposing (..)
+import Html
 import Random
 import RecurringTimer
 
@@ -171,16 +172,18 @@ stepEggs delta basket =
 --------------------------------------------------------------------------------
 
 
+view : Model -> Collage msg
 view model =
     case model of
         Active model_ ->
-            Basket.view model_.basket :: List.map Egg.view model_.eggs
+            Collage.group <|
+                Basket.view model_.basket
+                    :: List.map Egg.view model_.eggs
 
         Inactive { score } ->
-            [ score
+            score
                 |> String.fromInt
                 |> Collage.Text.fromString
                 |> Collage.Text.color Color.white
                 |> Collage.Text.size Collage.Text.huge
                 |> Collage.rendered
-            ]

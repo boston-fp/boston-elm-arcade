@@ -16,7 +16,6 @@ import RecurringTimer exposing (RecurringTimer)
 
 type alias Model =
     { level : Level.Model
-    , paused : Bool
     , lastkey : String
     }
 
@@ -30,7 +29,6 @@ type Msg
 init : Model
 init =
     { level = Level.init { numeggs = 100 }
-    , paused = False
     , lastkey = ""
     }
 
@@ -44,26 +42,13 @@ update msg model =
             )
 
         Keydown "p" ->
-            if model.paused then
-                ( model, Cmd.none )
-            else
-                ( { model | level = Level.update Level.RightPaddleDown model.level }
-                , Cmd.none
-                )
+            ( { model | level = Level.update Level.RightPaddleDown model.level }
+            , Cmd.none
+            )
 
         Keydown "q" ->
-            if model.paused then
-                ( model, Cmd.none )
-            else
-                ( { model
-                    | level = Level.update Level.LeftPaddleDown model.level
-                  }
-                , Cmd.none
-                )
-
-        Keydown " " ->
             ( { model
-                | paused = not model.paused
+                | level = Level.update Level.LeftPaddleDown model.level
               }
             , Cmd.none
             )
@@ -76,22 +61,16 @@ update msg model =
             )
 
         Keyup "p" ->
-            if model.paused then
-                ( model, Cmd.none )
-            else
-                ( { model
-                    | level = Level.update Level.RightPaddleUp model.level
-                  }
-                , Cmd.none
-                )
+            ( { model
+                | level = Level.update Level.RightPaddleUp model.level
+              }
+            , Cmd.none
+            )
 
         Keyup "q" ->
-            if model.paused then
-                ( model, Cmd.none )
-            else
-                ( { model | level = Level.update Level.LeftPaddleUp model.level }
-                , Cmd.none
-                )
+            ( { model | level = Level.update Level.LeftPaddleUp model.level }
+            , Cmd.none
+            )
 
         Keyup _ ->
             ( model, Cmd.none )
@@ -105,10 +84,7 @@ subscriptions model =
             Json.Decode.field "key" Json.Decode.string
     in
     Sub.batch
-        [ if model.paused then
-            Sub.none
-          else
-            Browser.Events.onAnimationFrameDelta Tick
+        [ Browser.Events.onAnimationFrameDelta Tick
         , Browser.Events.onKeyDown (Json.Decode.map Keydown keyDecoder)
         , Browser.Events.onKeyUp (Json.Decode.map Keyup keyDecoder)
         ]
