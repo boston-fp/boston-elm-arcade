@@ -4,6 +4,10 @@ import Collage
 import Collage.Render
 import Color
 import Games.Chansey exposing (..)
+import Games.Chansey.Column exposing (Column(..))
+import Games.Chansey.Egg exposing (Egg)
+import Games.Chansey.EggType exposing (EggType(..))
+import Games.Chansey.Types exposing (..)
 import Html exposing (Html)
 
 
@@ -44,3 +48,16 @@ viewBackground : Collage.Collage msg
 viewBackground =
     Collage.rectangle 400 800
         |> Collage.filled (Collage.uniform Color.black)
+
+
+colX : Column -> X
+colX col =
+    case col of
+        Left ->
+            -100
+
+        Center ->
+            0
+
+        Right ->
+            100

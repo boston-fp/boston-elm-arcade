@@ -2,6 +2,11 @@ module Games.Chansey exposing (..)
 
 import Browser
 import Browser.Events
+import Games.Chansey.Column exposing (Column(..))
+import Games.Chansey.Egg as Egg exposing (Egg)
+import Games.Chansey.EggTimer as EggTimer exposing (EggTimer, EggTimerStep(..))
+import Games.Chansey.EggType as EggType exposing (EggType(..))
+import Games.Chansey.Types exposing (..)
 import Json.Decode
 import Random
 import RecurringTimer exposing (RecurringTimer)
@@ -20,138 +25,10 @@ type alias Model =
     }
 
 
-type alias Milliseconds =
-    Float
-
-
-type alias Y_Per_Millisecond =
-    Float
-
-
-type alias X =
-    Float
-
-
-type alias Y =
-    Float
-
-
-type alias Egg =
-    { typ : EggType
-    , column : Column
-    , y : Y
-    }
-
-
-type EggTimer
-    = EggTimer Random.Seed RecurringTimer
-
-
-type EggTimerStep
-    = EggTimerStep EggTimer
-    | EggTimerFire EggTimer Egg
-
-
-newEggTimer : Random.Seed -> RecurringTimer -> EggTimer
-newEggTimer =
-    EggTimer
-
-
-stepEggTimer : Milliseconds -> EggTimer -> EggTimerStep
-stepEggTimer delta (EggTimer seed0 timer0) =
-    case RecurringTimer.step delta timer0 of
-        RecurringTimer.Step timer1 ->
-            EggTimerStep (EggTimer seed0 timer1)
-
-        RecurringTimer.Fire timer1 ->
-            let
-                ( egg, seed1 ) =
-                    randomEgg seed0
-            in
-            EggTimerFire (EggTimer seed1 timer1) egg
-
-
-{-| How many Y units an egg falls per millisecond.
--}
-eggSpeed : Y_Per_Millisecond
-eggSpeed =
-    0.8
-
-
-eggFall : Milliseconds -> Egg -> Egg
-eggFall delta egg =
-    { egg | y = egg.y - eggSpeed * delta }
-
-
-type EggType
-    = EggTypeEgg
-    | EggTypeBomb
-
-
-eggTypeScore : EggType -> Int
-eggTypeScore typ =
-    case typ of
-        EggTypeEgg ->
-            1
-
-        EggTypeBomb ->
-            -5
-
-
-type Column
-    = Left
-    | Center
-    | Right
-
-
-colX : Column -> X
-colX col =
-    case col of
-        Left ->
-            -100
-
-        Center ->
-            0
-
-        Right ->
-            100
-
-
 type Paddle
     = PaddleL
     | PaddleR
     | PaddleLR
-
-
-randomEgg : Random.Seed -> ( Egg, Random.Seed )
-randomEgg seed0 =
-    let
-        ( col, seed1 ) =
-            randomCol seed0
-
-        ( n, seed2 ) =
-            Random.step (Random.int 0 9) seed1
-
-        type_ =
-            if n == 0 then
-                EggTypeBomb
-            else
-                EggTypeEgg
-    in
-    ( Egg type_ col 390, seed2 )
-
-
-randomCol : Random.Seed -> ( Column, Random.Seed )
-randomCol seed =
-    case Random.step (Random.int 0 2) seed of
-        ( 0, seed1 ) ->
-            ( Left, seed1 )
-
-        ( 1, seed1 ) ->
-            ( Center, seed1 )
-
-        ( _, seed1 ) ->
-            ( Right, seed1 )
 
 
 type Msg
@@ -166,7 +43,7 @@ init =
     , paddle = Nothing
     , eggs = []
     , eggtimer =
-        newEggTimer
+        EggTimer.new
             (Random.initialSeed 1)
             (RecurringTimer.newWithJitter (Random.initialSeed 2) (Random.float 100 300))
     , numeggs = 0
@@ -295,7 +172,7 @@ stepEggs { delta, basket } =
         step egg { remaining, caught } =
             let
                 egg1 =
-                    eggFall delta egg
+                    Egg.fall delta egg
             in
             if egg1.y <= -400 then
                 { remaining = remaining, caught = caught }
@@ -318,7 +195,7 @@ updateTick delta model =
                 model.eggs
 
         ( eggtimer1, newEgg ) =
-            case stepEggTimer delta model.eggtimer of
+            case EggTimer.step delta model.eggtimer of
                 EggTimerStep eggtimer_ ->
                     ( eggtimer_, Nothing )
 
@@ -349,7 +226,7 @@ updateTick delta model =
 
                         EggTypeBomb ->
                             model.numeggs
-        , score = model.score + List.sum (List.map eggTypeScore caught)
+        , score = model.score + List.sum (List.map EggType.score caught)
     }
 
 
