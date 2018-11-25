@@ -8,6 +8,7 @@ import Games.Chansey.Basket as Basket
 import Games.Chansey.Column as Column exposing (Column(..))
 import Games.Chansey.Egg as Egg exposing (Egg)
 import Games.Chansey.EggType exposing (EggType(..))
+import Games.Chansey.Level as Level
 import Games.Chansey.Types exposing (..)
 import Html exposing (Html)
 
@@ -17,8 +18,7 @@ view model =
     Html.div
         []
         [ (Collage.Render.svg << Collage.group)
-            (Basket.view model.basket :: List.map Egg.view model.eggs ++ [ viewBackground ])
-        , Html.text (String.fromInt model.score)
+            (Level.view model.level ++ [ viewBackground ])
         ]
 
 

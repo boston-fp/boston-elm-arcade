@@ -6,11 +6,13 @@ module Games.Chansey.Basket
         , new
         , update
         , view
+        , y
         )
 
 import Collage
 import Color
 import Games.Chansey.Column as Column exposing (Column)
+import Games.Chansey.Types exposing (..)
 
 
 type Basket
@@ -25,6 +27,11 @@ new col =
 column : Basket -> Column
 column (Basket { column_ }) =
     column_
+
+
+y : Y
+y =
+    -300
 
 
 type Paddle
@@ -111,4 +118,4 @@ view : Basket -> Collage.Collage msg
 view (Basket basket) =
     Collage.circle 15
         |> Collage.filled (Collage.uniform Color.blue)
-        |> Collage.shift ( Column.x basket.column_, -300 )
+        |> Collage.shift ( Column.x basket.column_, y )

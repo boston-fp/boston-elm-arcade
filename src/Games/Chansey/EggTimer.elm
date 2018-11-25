@@ -2,39 +2,67 @@ module Games.Chansey.EggTimer
     exposing
         ( EggTimer
         , EggTimerStep(..)
+        , done
         , new
         , step
         )
 
 import Games.Chansey.Egg as Egg exposing (Egg)
+import Games.Chansey.EggType exposing (EggType(..))
 import Games.Chansey.Types exposing (..)
 import Random
 import RecurringTimer exposing (RecurringTimer)
 
 
 type EggTimer
-    = EggTimer Random.Seed RecurringTimer
+    = EggTimer
+        { seed : Random.Seed
+        , timer : RecurringTimer
+        , supply : Int -- *Egg* supply (bombs don't count)
+        }
 
 
 type EggTimerStep
     = EggTimerStep EggTimer
     | EggTimerFire EggTimer Egg
+    | EggTimerDone
 
 
-new : Random.Seed -> RecurringTimer -> EggTimer
-new =
-    EggTimer
+new : Random.Seed -> RecurringTimer -> Int -> EggTimer
+new seed timer supply =
+    EggTimer { seed = seed, timer = timer, supply = supply }
+
+
+done : EggTimer -> Bool
+done (EggTimer timer) =
+    timer.supply <= 0
 
 
 step : Milliseconds -> EggTimer -> EggTimerStep
-step delta (EggTimer seed0 timer0) =
-    case RecurringTimer.step delta timer0 of
-        RecurringTimer.Step timer1 ->
-            EggTimerStep (EggTimer seed0 timer1)
+step delta (EggTimer timer) =
+    if done (EggTimer timer) then
+        EggTimerDone
+    else
+        case RecurringTimer.step delta timer.timer of
+            RecurringTimer.Step timer1 ->
+                EggTimerStep (EggTimer { timer | timer = timer1 })
 
-        RecurringTimer.Fire timer1 ->
-            let
-                ( egg, seed1 ) =
-                    Egg.random seed0
-            in
-            EggTimerFire (EggTimer seed1 timer1) egg
+            RecurringTimer.Fire timer1 ->
+                let
+                    ( egg, seed1 ) =
+                        Egg.random timer.seed
+                in
+                EggTimerFire
+                    (EggTimer
+                        { seed = seed1
+                        , timer = timer1
+                        , supply =
+                            case Egg.typ egg of
+                                EggTypeBomb ->
+                                    timer.supply
+
+                                EggTypeEgg ->
+                                    timer.supply - 1
+                        }
+                    )
+                    egg
