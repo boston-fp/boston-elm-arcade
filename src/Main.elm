@@ -29,7 +29,7 @@ gameStateParser : Parser (GameState -> a) a
 gameStateParser =
     oneOf
         [ Url.Parser.map NoGame Url.Parser.top
-        , Url.Parser.map (PlayingSnake SnakeModel.init) (s (gameName Snake))
+        , Url.Parser.map (PlayingSnake SnakeModel.init) (s <| String.toLower <| gameName Snake)
         ]
 
 
@@ -96,7 +96,7 @@ update msg model =
 
 gameUrl : Game -> String
 gameUrl game =
-    "%PUBLIC_URL%/" ++ gameName game
+    "%PUBLIC_URL%/" ++ (String.toLower <| gameName game)
 
 
 noGame : Model -> Html Msg
