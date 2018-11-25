@@ -1,6 +1,14 @@
-module Games.Chansey.Egg exposing (..)
+module Games.Chansey.Egg
+    exposing
+        ( Egg
+        , fall
+        , random
+        , view
+        )
 
-import Games.Chansey.Column exposing (Column(..))
+import Collage exposing (Collage)
+import Color
+import Games.Chansey.Column as Column exposing (Column(..))
 import Games.Chansey.EggType exposing (EggType(..))
 import Games.Chansey.Types exposing (..)
 import Random
@@ -54,3 +62,25 @@ randomCol seed =
 
         ( _, seed1 ) ->
             ( Right, seed1 )
+
+
+
+--------------------------------------------------------------------------------
+-- View
+--------------------------------------------------------------------------------
+
+
+view : Egg -> Collage msg
+view egg =
+    Collage.circle 10
+        |> Collage.filled
+            (Collage.uniform
+                (case egg.typ of
+                    EggTypeEgg ->
+                        Color.yellow
+
+                    EggTypeBomb ->
+                        Color.red
+                )
+            )
+        |> Collage.shift ( Column.x egg.column, egg.y )

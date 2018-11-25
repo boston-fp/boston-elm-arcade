@@ -4,8 +4,9 @@ import Collage
 import Collage.Render
 import Color
 import Games.Chansey exposing (..)
-import Games.Chansey.Column exposing (Column(..))
-import Games.Chansey.Egg exposing (Egg)
+import Games.Chansey.Basket as Basket
+import Games.Chansey.Column as Column exposing (Column(..))
+import Games.Chansey.Egg as Egg exposing (Egg)
 import Games.Chansey.EggType exposing (EggType(..))
 import Games.Chansey.Types exposing (..)
 import Html exposing (Html)
@@ -16,48 +17,12 @@ view model =
     Html.div
         []
         [ (Collage.Render.svg << Collage.group)
-            (viewBasket model.basket :: List.map viewEgg model.eggs ++ [ viewBackground ])
+            (Basket.view model.basket :: List.map Egg.view model.eggs ++ [ viewBackground ])
         , Html.text (String.fromInt model.score)
         ]
-
-
-viewBasket : Column -> Collage.Collage msg
-viewBasket basket =
-    Collage.circle 15
-        |> Collage.filled (Collage.uniform Color.blue)
-        |> Collage.shift ( colX basket, -300 )
-
-
-viewEgg : Egg -> Collage.Collage msg
-viewEgg egg =
-    Collage.circle 10
-        |> Collage.filled
-            (Collage.uniform
-                (case egg.typ of
-                    EggTypeEgg ->
-                        Color.yellow
-
-                    EggTypeBomb ->
-                        Color.red
-                )
-            )
-        |> Collage.shift ( colX egg.column, egg.y )
 
 
 viewBackground : Collage.Collage msg
 viewBackground =
     Collage.rectangle 400 800
         |> Collage.filled (Collage.uniform Color.black)
-
-
-colX : Column -> X
-colX col =
-    case col of
-        Left ->
-            -100
-
-        Center ->
-            0
-
-        Right ->
-            100

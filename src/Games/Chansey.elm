@@ -2,6 +2,7 @@ module Games.Chansey exposing (..)
 
 import Browser
 import Browser.Events
+import Games.Chansey.Basket as Basket exposing (Basket)
 import Games.Chansey.Column exposing (Column(..))
 import Games.Chansey.Egg as Egg exposing (Egg)
 import Games.Chansey.EggTimer as EggTimer exposing (EggTimer, EggTimerStep(..))
@@ -13,8 +14,7 @@ import RecurringTimer exposing (RecurringTimer)
 
 
 type alias Model =
-    { basket : Column
-    , paddle : Maybe Paddle
+    { basket : Basket
     , eggs : List Egg
     , eggtimer : EggTimer
     , numeggs : Int -- Number of non-bomb eggs that have fallen
@@ -25,12 +25,6 @@ type alias Model =
     }
 
 
-type Paddle
-    = PaddleL
-    | PaddleR
-    | PaddleLR
-
-
 type Msg
     = Tick Milliseconds
     | Keydown String
@@ -39,8 +33,7 @@ type Msg
 
 init : Model
 init =
-    { basket = Center
-    , paddle = Nothing
+    { basket = Basket.new Center
     , eggs = []
     , eggtimer =
         EggTimer.new
@@ -60,97 +53,23 @@ update msg model =
         Tick delta ->
             ( updateTick delta model, Cmd.none )
 
-        Keydown "q" ->
-            case model.paddle of
-                Nothing ->
-                    ( { model
-                        | basket = Left
-                        , paddle = Just PaddleL
-                      }
-                    , Cmd.none
-                    )
-
-                Just PaddleL ->
-                    ( model, Cmd.none )
-
-                Just PaddleR ->
-                    ( { model | paddle = Just PaddleLR }, Cmd.none )
-
-                Just PaddleLR ->
-                    ( model, Cmd.none )
-
         Keydown "p" ->
-            case model.paddle of
-                Nothing ->
-                    ( { model
-                        | basket = Right
-                        , paddle = Just PaddleR
-                      }
-                    , Cmd.none
-                    )
+            ( { model | basket = Basket.update Basket.RightDown model.basket }, Cmd.none )
 
-                Just PaddleL ->
-                    ( { model | paddle = Just PaddleLR }, Cmd.none )
-
-                Just PaddleR ->
-                    ( model, Cmd.none )
-
-                Just PaddleLR ->
-                    ( model, Cmd.none )
-
-        Keyup "q" ->
-            case model.paddle of
-                Nothing ->
-                    ( model, Cmd.none )
-
-                Just PaddleL ->
-                    ( { model
-                        | paddle = Nothing
-                        , basket = Center
-                      }
-                    , Cmd.none
-                    )
-
-                Just PaddleR ->
-                    ( model, Cmd.none )
-
-                Just PaddleLR ->
-                    ( { model
-                        | paddle = Just PaddleR
-                        , basket = Right
-                      }
-                    , Cmd.none
-                    )
-
-        Keyup "p" ->
-            case model.paddle of
-                Nothing ->
-                    ( model, Cmd.none )
-
-                Just PaddleL ->
-                    ( model, Cmd.none )
-
-                Just PaddleR ->
-                    ( { model
-                        | paddle = Nothing
-                        , basket = Center
-                      }
-                    , Cmd.none
-                    )
-
-                Just PaddleLR ->
-                    ( { model
-                        | paddle = Just PaddleL
-                        , basket = Left
-                      }
-                    , Cmd.none
-                    )
+        Keydown "q" ->
+            ( { model | basket = Basket.update Basket.LeftDown model.basket }, Cmd.none )
 
         Keydown " " ->
             ( { model | paused = not model.paused }, Cmd.none )
 
         Keydown key ->
             ( { model | lastkey = key }, Cmd.none )
+
+        Keyup "p" ->
+            ( { model | basket = Basket.update Basket.RightUp model.basket }, Cmd.none )
+
+        Keyup "q" ->
+            ( { model | basket = Basket.update Basket.LeftUp model.basket }, Cmd.none )
 
         Keyup _ ->
             ( model, Cmd.none )
@@ -191,7 +110,7 @@ updateTick delta model =
     let
         { remaining, caught } =
             stepEggs
-                { delta = delta, basket = model.basket }
+                { delta = delta, basket = Basket.column model.basket }
                 model.eggs
 
         ( eggtimer1, newEgg ) =
