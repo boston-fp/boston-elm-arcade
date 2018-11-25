@@ -44,16 +44,22 @@ update msg model =
             )
 
         Keydown "p" ->
-            ( { model | level = Level.update Level.RightPaddleDown model.level }
-            , Cmd.none
-            )
+            if model.paused then
+                ( model, Cmd.none )
+            else
+                ( { model | level = Level.update Level.RightPaddleDown model.level }
+                , Cmd.none
+                )
 
         Keydown "q" ->
-            ( { model
-                | level = Level.update Level.LeftPaddleDown model.level
-              }
-            , Cmd.none
-            )
+            if model.paused then
+                ( model, Cmd.none )
+            else
+                ( { model
+                    | level = Level.update Level.LeftPaddleDown model.level
+                  }
+                , Cmd.none
+                )
 
         Keydown " " ->
             ( { model
@@ -70,16 +76,22 @@ update msg model =
             )
 
         Keyup "p" ->
-            ( { model
-                | level = Level.update Level.RightPaddleUp model.level
-              }
-            , Cmd.none
-            )
+            if model.paused then
+                ( model, Cmd.none )
+            else
+                ( { model
+                    | level = Level.update Level.RightPaddleUp model.level
+                  }
+                , Cmd.none
+                )
 
         Keyup "q" ->
-            ( { model | level = Level.update Level.LeftPaddleUp model.level }
-            , Cmd.none
-            )
+            if model.paused then
+                ( model, Cmd.none )
+            else
+                ( { model | level = Level.update Level.LeftPaddleUp model.level }
+                , Cmd.none
+                )
 
         Keyup _ ->
             ( model, Cmd.none )
