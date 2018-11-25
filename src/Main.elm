@@ -40,13 +40,6 @@ gameName game =
             "Snake"
 
 
-gameInit : Game -> GameState
-gameInit game =
-    case game of
-        Snake ->
-            PlayingSnake SnakeModel.init
-
-
 games : List Game
 games =
     [ Snake ]
@@ -87,21 +80,18 @@ update msg model =
                     ( model, Nav.load href )
 
         SnakeMsg snakeMsg ->
-            let
-                snakeModel : SnakeModel.Model
-                snakeModel =
-                    case model.gameState of
-                        NoGame ->
-                            SnakeModel.init
+            case model.gameState of
+                PlayingSnake snakeModel ->
+                    ( { model
+                        | gameState =
+                            PlayingSnake
+                                (SnakeUpdate.update snakeMsg snakeModel)
+                      }
+                    , Cmd.none
+                    )
 
-                        PlayingSnake m ->
-                            m
-
-                newModel : SnakeModel.Model
-                newModel =
-                    SnakeUpdate.update snakeMsg snakeModel
-            in
-            ( { model | gameState = PlayingSnake newModel }, Cmd.none )
+                NoGame ->
+                    ( model, Cmd.none )
 
 
 gameUrl : Game -> String
@@ -162,12 +152,10 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.gameState of
-        NoGame ->
-            Sub.none
-
-        PlayingSnake snakeModel ->
-            SnakeUpdate.subs snakeModel |> Sub.map SnakeMsg
+    -- TODO: Don't make conditional subscriptions until
+    -- https://github.com/elm/compiler/issues/1776
+    -- is resolved
+    Sub.batch [ SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg ]
 
 
 main : Program () Model Msg
