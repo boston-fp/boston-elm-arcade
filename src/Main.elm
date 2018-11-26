@@ -31,7 +31,7 @@ gameStateParser =
     oneOf
         [ Url.Parser.map NoGame Url.Parser.top
         , Url.Parser.map (PlayingSnake SnakeModel.init)
-            (s "%PUBLIC_URL%" </> (s <| String.toLower <| gameName Snake))
+            (s <| String.toLower <| gameName Snake)
         ]
 
 
@@ -60,9 +60,7 @@ init url key =
 
 urlToGameState : Url.Url -> GameState
 urlToGameState url =
-    -- TODO: SWITCH ME BACK TO GAME MODE
-    Url.Parser.parse gameStateParser url
-        |> Maybe.withDefault (PlayingSnake SnakeModel.init)
+    Url.Parser.parse gameStateParser url |> Maybe.withDefault NoGame
 
 
 type Msg

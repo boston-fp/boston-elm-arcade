@@ -6,7 +6,11 @@ const app = Elm.Main.init({
   node: document.getElementById('root')
 });
 
-app.ports.logToConsole.subscribe(string => console.log(string))
+if (app && app.ports && app.ports.logToConsole) {
+  // unused ports get stripped like any other function
+  // when elm-make is passed --optimize
+  app.ports.logToConsole.subscribe(string => console.log(string))
+}
 
 
 registerServiceWorker();
