@@ -16,7 +16,8 @@ import RecurringTimer exposing (RecurringTimer)
 
 type EggTimer
     = EggTimer
-        { seed : Random.Seed
+        { speed : { min : Y_Per_Millisecond, max : Y_Per_Millisecond }
+        , seed : Random.Seed
         , timer : RecurringTimer
         , supply : Int -- *Egg* supply (bombs don't count)
         }
@@ -28,9 +29,19 @@ type EggTimerStep
     | EggTimerDone
 
 
-new : Random.Seed -> RecurringTimer -> Int -> EggTimer
-new seed timer supply =
-    EggTimer { seed = seed, timer = timer, supply = supply }
+new :
+    { min : Y_Per_Millisecond, max : Y_Per_Millisecond }
+    -> Random.Seed
+    -> RecurringTimer
+    -> Int
+    -> EggTimer
+new speed seed timer supply =
+    EggTimer
+        { speed = speed
+        , seed = seed
+        , timer = timer
+        , supply = supply
+        }
 
 
 done : EggTimer -> Bool
@@ -50,19 +61,20 @@ step delta (EggTimer timer) =
             RecurringTimer.Fire timer1 ->
                 let
                     ( egg, seed1 ) =
-                        Egg.random timer.seed
+                        Egg.random timer.seed timer.speed
                 in
                 EggTimerFire
                     (EggTimer
-                        { seed = seed1
-                        , timer = timer1
-                        , supply =
-                            case Egg.typ egg of
-                                EggTypeBomb ->
-                                    timer.supply
+                        { timer
+                            | seed = seed1
+                            , timer = timer1
+                            , supply =
+                                case Egg.typ egg of
+                                    EggTypeBomb ->
+                                        timer.supply
 
-                                EggTypeEgg ->
-                                    timer.supply - 1
+                                    EggTypeEgg ->
+                                        timer.supply - 1
                         }
                     )
                     egg

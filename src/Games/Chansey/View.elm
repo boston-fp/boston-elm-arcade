@@ -10,6 +10,7 @@ import Games.Chansey.Column as Column exposing (Column(..))
 import Games.Chansey.Egg as Egg exposing (Egg)
 import Games.Chansey.EggType exposing (EggType(..))
 import Games.Chansey.Level as Level
+import Games.Chansey.State exposing (..)
 import Games.Chansey.Types exposing (..)
 import Html exposing (Html)
 
@@ -19,9 +20,34 @@ view model =
     Html.div
         []
         [ (Collage.Render.svg << Collage.group)
-            [ Level.view model.level
+            [ case model.state of
+                ShowingLevelTitle ->
+                    ("Level " ++ String.fromInt model.level.config.levelnum)
+                        |> Collage.Text.fromString
+                        |> Collage.Text.color Color.white
+                        |> Collage.Text.size Collage.Text.huge
+                        |> Collage.rendered
+
+                PlayingLevel ->
+                    Level.view model.level
+
+                ShowingLevelScore ->
+                    (String.fromInt model.level.score ++ "/" ++ String.fromInt model.level.config.numeggs)
+                        |> Collage.Text.fromString
+                        |> Collage.Text.color Color.white
+                        |> Collage.Text.size Collage.Text.huge
+                        |> Collage.rendered
+
+                GameWinScreen ->
+                    "Winner!"
+                        |> Collage.Text.fromString
+                        |> Collage.Text.color Color.white
+                        |> Collage.Text.size Collage.Text.huge
+                        |> Collage.rendered
             , viewBackground
             ]
+
+        -- , Html.text (Debug.toString model)
         ]
 
 

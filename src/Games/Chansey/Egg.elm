@@ -58,14 +58,20 @@ fall delta basket (Egg egg) =
         Falling (Egg { egg | y = y1 })
 
 
-random : Random.Seed -> ( Egg, Random.Seed )
-random seed0 =
+random :
+    Random.Seed
+    -> { min : Y_Per_Millisecond, max : Y_Per_Millisecond }
+    -> ( Egg, Random.Seed )
+random seed0 { min, max } =
     let
         ( col, seed1 ) =
             randomCol seed0
 
-        ( n, seed2 ) =
-            Random.step (Random.int 0 9) seed1
+        ( speed, seed2 ) =
+            Random.step (Random.float min max) seed1
+
+        ( n, seed3 ) =
+            Random.step (Random.int 0 9) seed2
 
         type_ =
             if n == 0 then
@@ -73,7 +79,7 @@ random seed0 =
             else
                 EggTypeEgg
     in
-    ( Egg { typ_ = type_, column = col, y = 390, speed = 0.8 }, seed2 )
+    ( Egg { typ_ = type_, column = col, y = 390, speed = speed }, seed3 )
 
 
 randomCol : Random.Seed -> ( Column, Random.Seed )

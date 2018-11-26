@@ -4,7 +4,7 @@ module Games.Chansey.Basket
         , Control(..)
         , column
         , new
-        , update
+        , step
         , view
         , y
         )
@@ -48,8 +48,8 @@ type Control
     | RightUp
 
 
-update : Control -> Basket -> Basket
-update control (Basket basket) =
+step : Control -> Basket -> Basket
+step control (Basket basket) =
     case control of
         LeftDown ->
             case basket.paddle of

@@ -12,4 +12,4 @@ score typ =
             1
 
         EggTypeBomb ->
-            -5
+            -1
