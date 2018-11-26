@@ -6,6 +6,9 @@ import Browser.Navigation as Nav
 import Element as E exposing (el, px, text)
 import Element.Background as Bg
 import Element.Input as Input exposing (button)
+import Games.Platformer.Model as PlatformerModel
+import Games.Platformer.Update as PlatformerUpdate
+import Games.Platformer.View as PlatformerView
 import Games.Snake.Model as SnakeModel
 import Games.Snake.Update as SnakeUpdate
 import Games.Snake.View as SnakeView
@@ -19,11 +22,13 @@ import Url.Parser exposing ((</>), Parser, oneOf, s)
 
 type Game
     = Snake
+    | Platformer
 
 
 type GameState
     = NoGame
     | PlayingSnake SnakeModel.Model
+    | PlayingPlatformer PlatformerModel.Model
 
 
 gameStateParser : Parser (GameState -> a) a
@@ -32,6 +37,8 @@ gameStateParser =
         [ Url.Parser.map NoGame Url.Parser.top
         , Url.Parser.map (PlayingSnake SnakeModel.init)
             (s <| String.toLower <| gameName Snake)
+        , Url.Parser.map (PlayingPlatformer PlatformerModel.init)
+            (s <| String.toLower <| gameName Platformer)
         ]
 
 
@@ -41,10 +48,13 @@ gameName game =
         Snake ->
             "Snake"
 
+        Platformer ->
+            "Platformer"
+
 
 games : List Game
 games =
-    [ Snake ]
+    [ Snake, Platformer ]
 
 
 type alias Model =
@@ -65,6 +75,7 @@ urlToGameState url =
 
 type Msg
     = SnakeMsg SnakeUpdate.Msg
+    | PlatformerMsg PlatformerUpdate.Msg
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
 
@@ -106,7 +117,21 @@ update msg model =
                     , Cmd.none
                     )
 
-                NoGame ->
+                _ ->
+                    ( model, Cmd.none )
+
+        PlatformerMsg platformerMsg ->
+            case model.gameState of
+                PlayingPlatformer platformerModel ->
+                    ( { model
+                        | gameState =
+                            PlayingPlatformer
+                                (PlatformerUpdate.update platformerMsg platformerModel)
+                      }
+                    , Cmd.none
+                    )
+
+                _ ->
                     ( model, Cmd.none )
 
 
@@ -161,6 +186,11 @@ view model =
                 (formatTitle (gameName Snake))
                 [ Html.map SnakeMsg (SnakeView.view snakeModel) ]
 
+        PlayingPlatformer platformerModel ->
+            Browser.Document
+                (formatTitle (gameName Platformer))
+                [ Html.map PlatformerMsg (PlatformerView.view platformerModel) ]
+
 
 
 ---- PROGRAM ----
@@ -171,7 +201,10 @@ subscriptions model =
     -- TODO: Don't make conditional subscriptions until
     -- https://github.com/elm/compiler/issues/1776
     -- is resolved
-    Sub.batch [ SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg ]
+    Sub.batch
+        [ SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg
+        , PlatformerUpdate.subs PlatformerModel.init |> Sub.map PlatformerMsg
+        ]
 
 
 main : Program () Model Msg
