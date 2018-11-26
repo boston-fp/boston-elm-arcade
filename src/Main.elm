@@ -41,6 +41,8 @@ gameStateParser =
         [ Url.Parser.map NoGame Url.Parser.top
         , Url.Parser.map (PlayingSnake SnakeModel.init)
             (s <| String.toLower <| gameName Snake)
+        , Url.Parser.map (PlayingChansey Chansey.init)
+            (s <| String.toLower <| gameName Chansey)
         , Url.Parser.map (PlayingPlatformer PlatformerModel.init)
             (s <| String.toLower <| gameName Platformer)
         ]

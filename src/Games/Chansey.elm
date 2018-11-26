@@ -188,18 +188,17 @@ subscriptions model =
             Json.Decode.field "key" Json.Decode.string
     in
     Sub.batch
-        [ case model.state of
-            PlayingLevel ->
-                Browser.Events.onAnimationFrameDelta Tick
+        [ Browser.Events.onAnimationFrameDelta Tick
 
-            ShowingLevelTitle ->
-                Sub.none
-
-            ShowingLevelScore ->
-                Sub.none
-
-            GameWinScreen ->
-                Sub.none
+        -- case model.state of
+        --   PlayingLevel ->
+        --       Browser.Events.onAnimationFrameDelta Tick
+        --   ShowingLevelTitle ->
+        --       Sub.none
+        --   ShowingLevelScore ->
+        --       Sub.none
+        --   GameWinScreen ->
+        --       Sub.none
         , Browser.Events.onKeyDown (Json.Decode.map Keydown keyDecoder)
         , Browser.Events.onKeyUp (Json.Decode.map Keyup keyDecoder)
         ]
