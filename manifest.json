@@ -1,6 +1,6 @@
 {
-  "short_name": "Elm App",
-  "name": "Create Elm App Sample",
+  "short_name": "Boston Elm Arcade",
+  "name": "Weekly FP - Boston Elm Arcade",
   "icons": [
     {
       "src": "favicon.ico",
