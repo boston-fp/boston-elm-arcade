@@ -7,7 +7,6 @@ import Element as E exposing (el, px, text)
 import Element.Background as Bg
 import Element.Input as Input exposing (button)
 import Games.Chansey as Chansey
-import Games.Chansey.View as ChanseyView
 import Games.Platformer.Model as PlatformerModel
 import Games.Platformer.Update as PlatformerUpdate
 import Games.Platformer.View as PlatformerView
@@ -215,7 +214,7 @@ view model =
         PlayingChansey chanseyModel ->
             Browser.Document
                 (formatTitle (gameName Chansey))
-                [ Html.map ChanseyMsg (ChanseyView.view chanseyModel) ]
+                [ Html.map ChanseyMsg (Chansey.view chanseyModel) ]
 
         PlayingPlatformer platformerModel ->
             Browser.Document
@@ -249,3 +248,8 @@ main =
         , onUrlChange = UrlChanged
         , onUrlRequest = LinkClicked
         }
+
+-- For local development of a single game
+{-
+main = Chansey.main
+-- -}
