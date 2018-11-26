@@ -1,6 +1,11 @@
-module Key exposing (Key(..), decoder)
+module Key exposing (Key(..), KeyType, decoder)
 
 import Json.Decode as Decode
+
+
+type KeyType
+    = KeyUp Key
+    | KeyDown Key
 
 
 type Key
