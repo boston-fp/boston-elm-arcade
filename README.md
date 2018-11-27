@@ -15,3 +15,12 @@ if you choose.
 - Get node.js and npm for your distribution
 - Run `npm install -g elm elm-format create-elm-app`
 - run `elm-app start` in the project directory
+
+### Develop With Docker
+
+Want to avoid installing node on your machine? A Docker file is provided
+
+- Configure and install [Docker](https://www.docker.com/get-started)
+- Run `./docker/build-container.sh` to prepare the dev environment
+- Run `./docker/enter-container.sh` to enter the container
+- Inside the container, run `rm -r elm-stuff && elm-app start` to start a development server on port 3000
