@@ -118,13 +118,8 @@ update msg model =
         SnakeMsg snakeMsg ->
             case model.gameState of
                 PlayingSnake snakeModel ->
-                    ( { model
-                        | gameState =
-                            PlayingSnake
-                                (SnakeUpdate.update snakeMsg snakeModel)
-                      }
-                    , Cmd.none
-                    )
+                    SnakeUpdate.update snakeMsg snakeModel
+                        |> updateWith PlayingSnake SnakeMsg model
 
                 _ ->
                     ( model, Cmd.none )
@@ -132,15 +127,8 @@ update msg model =
         ChanseyMsg chanseyMsg ->
             case model.gameState of
                 PlayingChansey chanseyModel ->
-                    let
-                        ( newChanseyModel, cmd ) =
-                            Chansey.update chanseyMsg chanseyModel
-                    in
-                    ( { model
-                        | gameState = PlayingChansey newChanseyModel
-                      }
-                    , Cmd.map ChanseyMsg cmd
-                    )
+                    Chansey.update chanseyMsg chanseyModel
+                        |> updateWith PlayingChansey ChanseyMsg model
 
                 _ ->
                     ( model, Cmd.none )
@@ -148,16 +136,26 @@ update msg model =
         PlatformerMsg platformerMsg ->
             case model.gameState of
                 PlayingPlatformer platformerModel ->
-                    ( { model
-                        | gameState =
-                            PlayingPlatformer
-                                (PlatformerUpdate.update platformerMsg platformerModel)
-                      }
-                    , Cmd.none
-                    )
+                    ( PlatformerUpdate.update platformerMsg platformerModel, Cmd.none )
+                        |> updateWith PlayingPlatformer PlatformerMsg model
 
                 _ ->
                     ( model, Cmd.none )
+
+
+{-| Map the game's state and commands to the app state and commands
+-}
+updateWith :
+    (gameModel -> GameState)
+    -> (subMsg -> Msg)
+    -> Model
+    -- this is the return value from your game's update function
+    -> ( gameModel, Cmd subMsg )
+    -> ( Model, Cmd Msg )
+updateWith toGameState toMsg model ( gameModel, subCmd ) =
+    ( { model | gameState = toGameState gameModel }
+    , Cmd.map toMsg subCmd
+    )
 
 
 gameUrl : Game -> String
@@ -249,7 +247,10 @@ main =
         , onUrlRequest = LinkClicked
         }
 
+
+
 -- For local development of a single game
 {-
-main = Chansey.main
--- -}
+   main = Chansey.main
+   --
+-}

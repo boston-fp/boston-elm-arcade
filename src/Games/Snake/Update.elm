@@ -20,7 +20,12 @@ deltaThreshold =
     120
 
 
-update : Msg -> Model -> Model
+withNoCmd : a -> ( a, Cmd msg )
+withNoCmd a =
+    ( a, Cmd.none )
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NewFrame delta ->
@@ -29,7 +34,7 @@ update msg model =
                     model.timeSinceLastDraw + delta
             in
             if model.paused || model.fail then
-                { model | timeSinceLastDraw = totalDelta }
+                { model | timeSinceLastDraw = totalDelta } |> withNoCmd
 
             else if totalDelta > deltaThreshold then
                 let
@@ -75,12 +80,13 @@ update msg model =
                         else
                             model.score
                 }
+                    |> withNoCmd
 
             else
-                { model | timeSinceLastDraw = totalDelta }
+                { model | timeSinceLastDraw = totalDelta } |> withNoCmd
 
         KeyPressed key ->
-            case key of
+            (case key of
                 Key.Space ->
                     if model.fail then
                         Model.init
@@ -102,6 +108,8 @@ update msg model =
 
                 _ ->
                     model
+            )
+                |> withNoCmd
 
 
 subs : Model -> Sub Msg
