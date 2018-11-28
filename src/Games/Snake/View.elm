@@ -14,7 +14,7 @@ import Html.Attributes as Hattr
 
 snakeSegmentSize : Float
 snakeSegmentSize =
-    10
+    20
 
 
 gamePointToViewPoint : Point -> ( Float, Float )
@@ -62,8 +62,8 @@ view model =
         boardRect : Collage msg
         boardRect =
             rectangle
-                (gameCoordToViewCoord Board.width - 10 / 2)
-                (gameCoordToViewCoord Board.height - 10 / 2)
+                (gameCoordToViewCoord Board.width - 20 / 2)
+                (gameCoordToViewCoord Board.height - 20 / 2)
                 |> outlined (solid 2 (uniform Color.green))
 
         snek : Collage msg
