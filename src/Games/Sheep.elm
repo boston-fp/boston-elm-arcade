@@ -6,7 +6,7 @@ import Json.Decode
 
 
 type alias Model =
-    { doggo : { x : Float, y : Float }
+    { doggo : Doggo
     , sheep : List Sheep
     , lastmsg : Maybe Msg
     }
@@ -18,7 +18,25 @@ type Msg
     | Keyup String
 
 
+type alias Doggo =
+    { pos : Pos
+    , vel : Vel
+    }
+
+
 type alias Sheep =
+    { pos : Pos
+    , vel : Vel
+    }
+
+
+type alias Pos =
+    { x : Float
+    , y : Float
+    }
+
+
+type alias Vel =
     { x : Float
     , y : Float
     }
@@ -27,7 +45,10 @@ type alias Sheep =
 init : Model
 init =
     { lastmsg = Nothing
-    , doggo = { x = 0, y = 0 }
+    , doggo =
+        { pos = { x = 0, y = 0 }
+        , vel = { x = 0, y = 0 }
+        }
     , sheep = []
     }
 
