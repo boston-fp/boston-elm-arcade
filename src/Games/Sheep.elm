@@ -33,7 +33,10 @@ type Msg
 
 type alias Doggo =
     { pos : Pos
-    , bearing : Bearing
+    , up : Bool
+    , down : Bool
+    , left : Bool
+    , right : Bool
     , angle : Float
     }
 
@@ -113,12 +116,15 @@ type Bearing
 
 
 doggoVel : Doggo -> Vel
-doggoVel { bearing, angle } =
+doggoVel { up, down, left, right, angle } =
     let
         vec =
             { x = cos angle
             , y = sin angle
             }
+
+        bearing =
+            Forward
 
         multiplier =
             case bearing of
@@ -138,7 +144,10 @@ init : Model
 init =
     { doggo =
         { pos = { x = 0, y = 0 }
-        , bearing = Halt
+        , up = False
+        , down = False
+        , left = False
+        , right = False
         , angle = 0
         }
     , sheep =
@@ -183,13 +192,18 @@ update msg model =
             ( { model | windowSize = size }, Cmd.none )
 
         KeyEvent e ->
-            pure <|
-                case e of
-                    KeyUp k ->
-                        model
+            pure { model | doggo = pointDoggo e model.doggo }
 
-                    KeyDown k ->
-                        model
+
+pointDoggo : Key.Event -> Doggo -> Doggo
+pointDoggo e doggo =
+    doggo
+
+
+
+-- case ( e, doggo.bearing ) of
+--     ( KeyDown Key.Up, _ ) ->
+--         { doggo | bearing = Forward }
 
 
 moveDoggo : Float -> { x | doggo : Doggo } -> Doggo
