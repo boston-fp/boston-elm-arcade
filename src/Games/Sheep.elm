@@ -3,6 +3,7 @@ module Games.Sheep exposing (Model, Msg(..), Sheep, init, subscriptions, update,
 import Browser.Events
 import Html exposing (Html)
 import Json.Decode
+import Key exposing (Key(..))
 
 
 type alias Model =
@@ -14,8 +15,7 @@ type alias Model =
 
 type Msg
     = Tick Float
-    | Keydown String
-    | Keyup String
+    | Key Key
 
 
 type alias Doggo =
@@ -89,6 +89,5 @@ subscriptions _ =
     in
     Sub.batch
         [ Browser.Events.onAnimationFrameDelta Tick
-        , Browser.Events.onKeyDown (Json.Decode.map Keydown keyDecoder)
-        , Browser.Events.onKeyUp (Json.Decode.map Keyup keyDecoder)
+        , Browser.Events.onKeyDown (Json.Decode.map Key Key.decoder)
         ]
