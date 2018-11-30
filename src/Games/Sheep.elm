@@ -1,5 +1,6 @@
-module Games.Sheep exposing (Doggo, Model, Msg(..), Sheep, init, integratePos, subscriptions, update, view)
+module Games.Sheep exposing (Doggo, Model, Msg(..), Sheep, init, integratePos, main, subscriptions, update, view)
 
+import Browser
 import Browser.Events
 import Collage exposing (..)
 import Collage.Layout exposing (..)
@@ -61,16 +62,7 @@ that's just the doggo (but in the future will include the other shep).
 -}
 calculateSheepVelocity : Doggo -> Sheep -> V2
 calculateSheepVelocity doggo shep =
-    let
-      vec = repel doggo shep
-    in
-      Debug.todo ""
-
-    -- if norm > 200 then
-    --     V2 0 0
-
-    -- else
-    --     V2.scale (0.01 / norm) v1
+    V2.maxNorm 0.05 (repel doggo shep)
 
 
 {-| 'repel p q' calculates a vector pointing away from 'p', with norm
@@ -291,3 +283,13 @@ subscriptions _ =
         , Browser.Events.onKeyUp (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
         , Browser.Events.onResize (\w h -> WindowResized (WindowSize w h))
         ]
+
+
+main : Program () Model Msg
+main =
+    Browser.element
+        { view = view
+        , init = \_ -> ( init, Cmd.none )
+        , update = update
+        , subscriptions = subscriptions
+        }
