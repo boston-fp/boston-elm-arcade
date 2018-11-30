@@ -135,8 +135,24 @@ update msg model =
     in
     case msg of
         Tick dt ->
-            logged
-                (moveDoggo dt model)
+            let
+                sheep1 : List Sheep
+                sheep1 =
+                    List.map
+                        (\sheep ->
+                            { sheep
+                                | pos = integratePos dt sheep
+                                , vel = calculateSheepVelocity model.doggo sheep
+                            }
+                        )
+                        model.sheep
+            in
+            ( { model
+                | doggo = moveDoggo dt model
+                , sheep = sheep1
+              }
+            , Cmd.none
+            )
 
         KeyEvent e ->
             logged <|
@@ -148,7 +164,7 @@ update msg model =
                         Debug.todo ""
 
 
-moveDoggo : Float -> { x | doggo : Doggo } -> { x | doggo : Doggo }
+moveDoggo : Float -> { x | doggo : Doggo } -> Doggo
 moveDoggo dt x =
     let
         doggo =
@@ -157,9 +173,7 @@ moveDoggo dt x =
         newPosVel =
             integratePos dt { pos = x.doggo.pos, vel = Debug.todo "" }
     in
-    { x
-        | doggo = doggo
-    }
+    doggo
 
 
 view : Model -> Html Msg
