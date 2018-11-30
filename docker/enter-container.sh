@@ -27,5 +27,5 @@ docker run \
     -v "${SCRIPT_DIR}/../:/boston-elm-arcade" \
     -w "/boston-elm-arcade" \
     $DOCKER_ARGS \
-    depot-ui-builder:$CONTAINER_TAG \
+    boston-elm-arcade:$CONTAINER_TAG \
     $COMMAND
