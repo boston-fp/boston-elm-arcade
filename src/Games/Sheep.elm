@@ -1,11 +1,15 @@
-module Games.Sheep exposing (Model, Msg(..), Sheep, init, subscriptions, update, view)
+module Games.Sheep exposing (Doggo, Model, Msg(..), Pos, Sheep, Vel, init, integratePos, subscriptions, update, view)
 
 import Browser.Events
-import Collage exposing (Collage, filled, rectangle, shift, uniform)
-import Collage.Render as Render
+import Collage exposing (..)
+import Collage.Layout exposing (..)
+import Collage.Render as Render exposing (svg)
+import Collage.Text exposing (..)
 import Color exposing (Color, rgb)
 import Html exposing (Html)
+import Html.Attributes as Hattr
 import Json.Decode
+import Key exposing (Key(..))
 
 
 type alias Model =
@@ -17,8 +21,7 @@ type alias Model =
 
 type Msg
     = Tick Float
-    | Keydown String
-    | Keyup String
+    | Key Key
 
 
 type alias Doggo =
@@ -45,6 +48,21 @@ type alias Vel =
     }
 
 
+
+-- | Update an entity's position with its velocity.
+
+
+integratePos : Float -> { r | pos : Pos, vel : Vel } -> { r | pos : Pos, vel : Vel }
+integratePos dt entity =
+    let
+        pos1 =
+            { x = entity.pos.x + dt * entity.vel.x
+            , y = entity.pos.y + dt * entity.vel.y
+            }
+    in
+    { entity | pos = pos1 }
+
+
 init : Model
 init =
     { lastmsg = Nothing
@@ -52,7 +70,13 @@ init =
         { pos = { x = 0, y = 0 }
         , vel = { x = 0, y = 0 }
         }
-    , sheep = []
+    , sheep =
+        [ Sheep (Pos 50 -150) (Vel 0 0)
+        , Sheep (Pos 0 0) (Vel 0 0)
+        , Sheep (Pos 200 -50) (Vel 0 0)
+        , Sheep (Pos 100 -50) (Vel 0 0)
+        , Sheep (Pos -50 100) (Vel 0 0)
+        ]
     }
 
 
@@ -63,33 +87,38 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
+    let
+        title : Collage msg
+        title =
+            fromString "The Sheep Whisperer"
+                |> size (huge * 4)
+                |> color Color.red
+                |> rendered
+    in
     Html.div
-        []
-        (List.concat
-            [ [ Html.text (Debug.toString model) ]
-            , List.map (viewSheep >> Render.svg) model.sheep
-            ]
-        )
+        [ Hattr.style "background-color" "rgb(80,136,80)"
+        , Hattr.style "width" "100wh"
+        , Hattr.style "height" "100vh"
+        , Hattr.style "display" "flex"
+        , Hattr.style "flex-direction" "column"
+        , Hattr.style "align-items" "center"
+        , Hattr.style "justify-content" "center"
+        ]
+        [ svg <| group <| List.map viewSheep model.sheep ]
 
 
 viewSheep : Sheep -> Collage Msg
 viewSheep sheep =
     rectangle
-        16
-        16
+        24
+        36
         |> filled (uniform (rgb 220 220 220))
         |> shift ( sheep.pos.x, sheep.pos.y )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    let
-        keyDecoder : Json.Decode.Decoder String
-        keyDecoder =
-            Json.Decode.field "key" Json.Decode.string
-    in
     Sub.batch
         [ Browser.Events.onAnimationFrameDelta Tick
-        , Browser.Events.onKeyDown (Json.Decode.map Keydown keyDecoder)
-        , Browser.Events.onKeyUp (Json.Decode.map Keyup keyDecoder)
+        , Browser.Events.onKeyDown (Json.Decode.map Key Key.decoder)
         ]

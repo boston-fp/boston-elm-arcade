@@ -22,6 +22,8 @@ decoder =
     Decode.map fromStr (Decode.field "key" Decode.string)
 
 
+{-| TODO maybe String -> Result String Key
+-}
 fromStr : String -> Key
 fromStr string =
     case string of
