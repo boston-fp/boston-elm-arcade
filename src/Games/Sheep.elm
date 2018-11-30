@@ -42,6 +42,21 @@ type alias Vel =
     }
 
 
+
+-- | Update an entity's position with its velocity.
+
+
+integratePos : Float -> { r | pos : Pos, vel : Vel } -> { r | pos : Pos, vel : Vel }
+integratePos dt entity =
+    let
+        pos1 =
+            { x = entity.pos.x + dt * entity.vel.x
+            , y = entity.pos.y + dt * entity.vel.y
+            }
+    in
+    { entity | pos = pos1 }
+
+
 init : Model
 init =
     { lastmsg = Nothing
