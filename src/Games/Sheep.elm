@@ -89,7 +89,7 @@ calculateSheepVelocity doggo shep =
     let
         -- Vector pointing from dog to sheep
         v1 =
-            vminus shep.vel (doggoVel doggo)
+            vminus shep.pos doggo.pos
     in
     vscale v1 (min 2 (1 / vmagnitude v1))
 
@@ -213,7 +213,9 @@ view model =
         , Hattr.style "align-items" "center"
         , Hattr.style "justify-content" "center"
         ]
-        [ svg <| group <| viewDoggo model.doggo :: List.map viewSheep model.sheep ]
+        [ svg <| group <| viewDoggo model.doggo :: List.map viewSheep model.sheep
+        , Html.text (Debug.toString model)
+        ]
 
 
 viewSheep : Sheep -> Collage Msg
