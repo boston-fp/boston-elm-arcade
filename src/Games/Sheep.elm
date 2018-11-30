@@ -86,19 +86,24 @@ integratePos dt entity =
     pos1
 
 
-
--- Calculate a sheep's velocity, as a pure function of inputs. Currently, that's
--- just the doggo (but in the future will include the other shep).
-
-
+{-| Calculate a sheep's velocity, as a pure function of inputs. Currently,
+that's just the doggo (but in the future will include the other shep).
+-}
 calculateSheepVelocity : Doggo -> Sheep -> Vel
 calculateSheepVelocity doggo shep =
     let
         -- Vector pointing from dog to sheep
         v1 =
             vminus shep.pos doggo.pos
+
+        mag =
+            vmagnitude v1
     in
-    vscale v1 (min 2 (1 / vmagnitude v1))
+    if mag > 200 then
+        { x = 0, y = 0 }
+
+    else
+        vscale v1 (0.01 / mag)
 
 
 type Bearing
@@ -220,7 +225,7 @@ view model =
         , Hattr.style "justify-content" "center"
         ]
         [ svg <| group <| viewDoggo model.doggo :: List.map viewSheep model.sheep
-        , Html.text (Debug.toString model)
+        -- , Html.text (Debug.toString model)
         ]
 
 
