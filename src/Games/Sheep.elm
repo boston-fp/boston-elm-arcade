@@ -1,4 +1,4 @@
-module Games.Sheep exposing (..)
+module Games.Sheep exposing (Model, Msg(..), Sheep, init, subscriptions, update, view)
 
 import Browser.Events
 import Html exposing (Html)
@@ -6,7 +6,10 @@ import Json.Decode
 
 
 type alias Model =
-    { lastmsg : Maybe Msg }
+    { doggo : { x : Float, y : Float }
+    , sheep : List Sheep
+    , lastmsg : Maybe Msg
+    }
 
 
 type Msg
@@ -15,9 +18,18 @@ type Msg
     | Keyup String
 
 
+type alias Sheep =
+    { x : Float
+    , y : Float
+    }
+
+
 init : Model
 init =
-    { lastmsg = Nothing }
+    { lastmsg = Nothing
+    , doggo = { x = 0, y = 0 }
+    , sheep = []
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
