@@ -107,7 +107,7 @@ calculateSheepVelocity doggo shep =
         { x = 0, y = 0 }
 
     else
-        vscale v1 (0.01 / mag)
+        vscale (vscale v1 (0.01 / mag)) shep.mass
 
 
 type Bearing
@@ -240,6 +240,7 @@ view model =
         , Hattr.style "justify-content" "center"
         ]
         [ svg <| group <| viewDoggo model.doggo :: List.map viewSheep model.sheep
+
         -- , Html.text (Debug.toString model)
         ]
 
