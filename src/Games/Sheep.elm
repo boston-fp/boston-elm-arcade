@@ -47,11 +47,25 @@ type alias Vel =
     , y : Float
     }
 
+vminus : Vel -> Vel -> Vel
+vminus v1 v2 =
+  { x = v1.x - v2.x
+  , y = v1.y - v2.y
+  }
+
+vscale : Vel -> Float -> Vel
+vscale { x, y } s =
+  { x = s * x
+  , y = s * y
+  }
+
+vmagnitude : Vel -> Float
+vmagnitude vel =
+  sqrt (vel.x * vel.x + vel.y * vel.y)
 
 
--- | Update an entity's position with its velocity.
-
-
+{-| Update an entity's position with its velocity.
+-}
 integratePos : Float -> { r | pos : Pos, vel : Vel } -> { r | pos : Pos, vel : Vel }
 integratePos dt entity =
     let
@@ -61,6 +75,17 @@ integratePos dt entity =
             }
     in
     { entity | pos = pos1 }
+
+-- Calculate a sheep's velocity, as a pure function of inputs. Currently, that's
+-- just the doggo (but in the future will include the other shep).
+calculateSheepVelocity : Doggo -> Sheep -> Vel
+calculateSheepVelocity doggo shep =
+  let
+      -- Vector pointing from dog to sheep
+      v1 = vminus shep.vel doggo.vel
+      one_over_mag = 1 / vmagnitude v1
+  in
+      vscale (vscale v1 one_over_mag) (min 2 one_over_mag)
 
 
 init : Model
