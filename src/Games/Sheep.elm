@@ -1,6 +1,9 @@
 module Games.Sheep exposing (Model, Msg(..), Sheep, init, subscriptions, update, view)
 
 import Browser.Events
+import Collage exposing (Collage, filled, rectangle, shift, uniform)
+import Collage.Render as Render
+import Color exposing (Color, rgb)
 import Html exposing (Html)
 import Json.Decode
 
@@ -62,7 +65,20 @@ view : Model -> Html Msg
 view model =
     Html.div
         []
-        [ Html.text (Debug.toString model) ]
+        (List.concat
+            [ [ Html.text (Debug.toString model) ]
+            , List.map (viewSheep >> Render.svg) model.sheep
+            ]
+        )
+
+
+viewSheep : Sheep -> Collage Msg
+viewSheep sheep =
+    rectangle
+        16
+        16
+        |> filled (uniform (rgb 220 220 220))
+        |> shift ( sheep.pos.x, sheep.pos.y )
 
 
 subscriptions : Model -> Sub Msg
