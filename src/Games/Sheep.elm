@@ -1,7 +1,13 @@
-module Games.Sheep exposing (Model, Msg(..), Sheep, init, subscriptions, update, view)
+module Games.Sheep exposing (Doggo, Model, Msg(..), Pos, Sheep, Vel, init, integratePos, subscriptions, update, view)
 
 import Browser.Events
+import Collage exposing (..)
+import Collage.Layout exposing (..)
+import Collage.Render exposing (svg)
+import Collage.Text exposing (..)
+import Color
 import Html exposing (Html)
+import Html.Attributes as Hattr
 import Json.Decode
 import Key exposing (Key(..))
 
@@ -75,9 +81,24 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
+    let
+        title : Collage msg
+        title =
+            fromString "The Sheep Whisperer"
+                |> size (huge * 4)
+                |> color Color.red
+                |> rendered
+    in
     Html.div
-        []
-        [ Html.text (Debug.toString model) ]
+        [ Hattr.style "background-color" "rgb(20,20,20)"
+        , Hattr.style "width" "100wh"
+        , Hattr.style "height" "100vh"
+        , Hattr.style "display" "flex"
+        , Hattr.style "flex-direction" "column"
+        , Hattr.style "align-items" "center"
+        , Hattr.style "justify-content" "center"
+        ]
+        [ svg <| group <| [ title ] ]
 
 
 subscriptions : Model -> Sub Msg
