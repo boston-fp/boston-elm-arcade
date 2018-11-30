@@ -1,4 +1,4 @@
-module V2 exposing (V2(..), add, diff, dot, fromDegrees, fromRadians, lerp, negate, norm, overX, overY, project, quadrance, scale, signorm, toDegrees, toRadians, x, y, zero)
+module V2 exposing (V2(..), add, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, negate, norm, overX, overY, project, quadrance, scale, signorm, toDegrees, toRadians, x, y, zero)
 
 import Radians exposing (Radians(..))
 
@@ -35,6 +35,22 @@ fromRadians (Radians r) =
 lerp : Float -> V2 -> V2 -> V2
 lerp a v w =
     add (scale a v) (scale (1 - a) w)
+
+
+{-| Scale a vector back if its norm is greater than the given value. (Useful to
+implement e.g. "maximum velocity").
+-}
+maxNorm : Float -> V2 -> V2
+maxNorm n v =
+    let
+        q =
+            quadrance v
+    in
+    if q > n * n then
+        scale (n / sqrt q) v
+
+    else
+        v
 
 
 negate : V2 -> V2
@@ -101,16 +117,12 @@ signorm v =
 
 toDegrees : V2 -> Float
 toDegrees =
-    let
-        deg2rad deg =
-            deg * 180 / pi
-    in
-    toRadians >> deg2rad
+    toRadians >> Radians.toDegrees
 
 
-toRadians : V2 -> Float
+toRadians : V2 -> Radians
 toRadians (V2 vx vy) =
-    atan2 vy vx
+    Radians (atan2 vy vx)
 
 
 x : V2 -> Float

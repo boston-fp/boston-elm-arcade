@@ -62,24 +62,21 @@ that's just the doggo (but in the future will include the other shep).
 calculateSheepVelocity : Doggo -> Sheep -> V2
 calculateSheepVelocity doggo shep =
     let
-        -- Vector pointing from dog to sheep
-        v1 =
-            P2.diff shep.pos doggo.pos
-
-        norm =
-            V2.norm v1
+      vec = repel doggo shep
     in
-    if norm > 200 then
-        V2 0 0
+      Debug.todo ""
 
-    else
-        V2.scale (0.01 / norm) v1
+    -- if norm > 200 then
+    --     V2 0 0
+
+    -- else
+    --     V2.scale (0.01 / norm) v1
 
 
 {-| 'repel p q' calculates a vector pointing away from 'p', with norm
 proportional to the inverse square of the distance bewteen 'p' and 'q'.
 -}
-repel : { r | pos : P2 } -> { r | pos : P2 } -> V2
+repel : { r | pos : P2 } -> { s | pos : P2 } -> V2
 repel pariah senpai =
     let
         vec =
@@ -252,7 +249,7 @@ viewSheep sheep =
             |> shift ( 20, 0 )
         ]
         |> scale sheep.mass
-        |> rotate (V2.toRadians sheep.vel)
+        |> rotate (Radians.unwrap (V2.toRadians sheep.vel))
         |> shift ( P2.x sheep.pos, P2.y sheep.pos )
 
 
