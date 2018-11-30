@@ -15,7 +15,6 @@ import Key exposing (Key(..), KeyType(..))
 type alias Model =
     { doggo : Doggo
     , sheep : List Sheep
-    , lastmsg : Maybe Msg
     }
 
 
@@ -89,20 +88,42 @@ calculateSheepVelocity doggo shep =
     let
         -- Vector pointing from dog to sheep
         v1 =
-            vminus shep.vel (doggoVel doggo)
+            vminus shep.pos doggo.pos
     in
     vscale v1 (min 2 (1 / vmagnitude v1))
 
 
+type Bearing
+    = Forward
+    | Halt
+    | Back
+
+
 doggoVel : Doggo -> Vel
-doggoVel _ =
-    { x = 0, y = 0 }
+doggoVel { bearing, angle } =
+    let
+        vec =
+            { x = cos angle
+            , y = sin angle
+            }
+
+        multiplier =
+            case bearing of
+                Forward ->
+                    1
+
+                Halt ->
+                    0
+
+                Back ->
+                    -1
+    in
+    vscale vec (multiplier * vmagnitude vec)
 
 
 init : Model
 init =
-    { lastmsg = Nothing
-    , doggo =
+    { doggo =
         { pos = { x = 0, y = 0 }
         , bearing = Halt
         , angle = 0
@@ -117,49 +138,54 @@ init =
     }
 
 
-type Bearing
-    = Forward
-    | Halt
-    | Back
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        logged x =
-            ( { x
-                | lastmsg = Just msg
-              }
-            , Cmd.none
-            )
+        pure x =
+            ( x, Cmd.none )
     in
     case msg of
         Tick dt ->
-            logged
-                (moveDoggo dt model)
+            let
+                sheep1 : List Sheep
+                sheep1 =
+                    List.map
+                        (\sheep ->
+                            { sheep
+                                | pos = integratePos dt sheep
+                                , vel = calculateSheepVelocity model.doggo sheep
+                            }
+                        )
+                        model.sheep
+            in
+            ( { model
+                | doggo = moveDoggo dt model
+                , sheep = sheep1
+              }
+            , Cmd.none
+            )
 
         KeyEvent e ->
-            logged <|
+            pure <|
                 case e of
                     KeyUp k ->
-                        Debug.todo ""
+                        model
 
                     KeyDown k ->
-                        Debug.todo ""
+                        model
 
 
-moveDoggo : Float -> { x | doggo : Doggo } -> { x | doggo : Doggo }
+moveDoggo : Float -> { x | doggo : Doggo } -> Doggo
 moveDoggo dt x =
     let
         doggo =
             x.doggo
 
-        newPosVel =
-            integratePos dt { pos = x.doggo.pos, vel = Debug.todo "" }
+        newPos =
+            integratePos dt
+                { pos = x.doggo.pos, vel = doggoVel doggo }
     in
-    { x
-        | doggo = doggo
-    }
+    { doggo | pos = newPos }
 
 
 view : Model -> Html Msg
@@ -181,7 +207,9 @@ view model =
         , Hattr.style "align-items" "center"
         , Hattr.style "justify-content" "center"
         ]
-        [ svg <| group <| viewDoggo model.doggo :: List.map viewSheep model.sheep ]
+        [ svg <| group <| viewDoggo model.doggo :: List.map viewSheep model.sheep
+        , Html.text (Debug.toString model)
+        ]
 
 
 viewSheep : Sheep -> Collage Msg

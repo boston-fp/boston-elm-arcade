@@ -252,9 +252,10 @@ subscriptions model =
     -- https://github.com/elm/compiler/issues/1776
     -- is resolved
     Sub.batch
-        [ SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg
-        , Chansey.subscriptions Chansey.init |> Sub.map ChanseyMsg
-        , PlatformerUpdate.subs PlatformerModel.init |> Sub.map PlatformerMsg
+        [ -- SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg
+        -- , Chansey.subscriptions Chansey.init |> Sub.map ChanseyMsg
+        -- , PlatformerUpdate.subs PlatformerModel.init |> Sub.map PlatformerMsg
+          Sheep.subscriptions Sheep.init |> Sub.map SheepMsg
         ]
 
 
