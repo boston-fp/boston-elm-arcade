@@ -9,7 +9,7 @@ import Color exposing (Color, rgb)
 import Html exposing (Html)
 import Html.Attributes as Hattr
 import Json.Decode
-import Key exposing (Key(..))
+import Key exposing (Key(..), KeyType(..))
 
 
 type alias Model =
@@ -21,12 +21,13 @@ type alias Model =
 
 type Msg
     = Tick Float
-    | Key Key
+    | KeyEvent Key.Event
 
 
 type alias Doggo =
     { pos : Pos
-    , vel : Vel
+    , bearing : Bearing
+    , angle : Float
     }
 
 
@@ -67,9 +68,7 @@ vmagnitude vel =
     sqrt (vel.x * vel.x + vel.y * vel.y)
 
 
-{-| Update an entity's position with its velocity.
--}
-integratePos : Float -> { r | pos : Pos, vel : Vel } -> { r | pos : Pos, vel : Vel }
+integratePos : Float -> { pos : Pos, vel : Vel } -> Pos
 integratePos dt entity =
     let
         pos1 =
@@ -77,7 +76,7 @@ integratePos dt entity =
             , y = entity.pos.y + dt * entity.vel.y
             }
     in
-    { entity | pos = pos1 }
+    pos1
 
 
 
@@ -90,12 +89,14 @@ calculateSheepVelocity doggo shep =
     let
         -- Vector pointing from dog to sheep
         v1 =
-            vminus shep.vel doggo.vel
-
-        one_over_mag =
-            1 / vmagnitude v1
+            vminus shep.vel (doggoVel doggo)
     in
-    vscale (vscale v1 one_over_mag) (min 2 one_over_mag)
+    vscale v1 (min 2 (1 / vmagnitude v1))
+
+
+doggoVel : Doggo -> Vel
+doggoVel _ =
+    { x = 0, y = 0 }
 
 
 init : Model
@@ -103,7 +104,8 @@ init =
     { lastmsg = Nothing
     , doggo =
         { pos = { x = 0, y = 0 }
-        , vel = { x = 0, y = 0 }
+        , bearing = Halt
+        , angle = 0
         }
     , sheep =
         [ Sheep (Pos 50 -150) (Vel 0 0)
@@ -115,9 +117,49 @@ init =
     }
 
 
+type Bearing
+    = Forward
+    | Halt
+    | Back
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( { model | lastmsg = Just msg }, Cmd.none )
+    let
+        logged x =
+            ( { x
+                | lastmsg = Just msg
+              }
+            , Cmd.none
+            )
+    in
+    case msg of
+        Tick dt ->
+            logged
+                (moveDoggo dt model)
+
+        KeyEvent e ->
+            logged <|
+                case e of
+                    KeyUp k ->
+                        Debug.todo ""
+
+                    KeyDown k ->
+                        Debug.todo ""
+
+
+moveDoggo : Float -> { x | doggo : Doggo } -> { x | doggo : Doggo }
+moveDoggo dt x =
+    let
+        doggo =
+            x.doggo
+
+        newPosVel =
+            integratePos dt { pos = x.doggo.pos, vel = Debug.todo "" }
+    in
+    { x
+        | doggo = doggo
+    }
 
 
 view : Model -> Html Msg
@@ -190,5 +232,6 @@ subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ Browser.Events.onAnimationFrameDelta Tick
-        , Browser.Events.onKeyDown (Json.Decode.map Key Key.decoder)
+        , Browser.Events.onKeyDown (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
+        , Browser.Events.onKeyUp (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
         ]

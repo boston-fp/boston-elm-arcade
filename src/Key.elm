@@ -1,6 +1,10 @@
-module Key exposing (Key(..), KeyType, decoder)
+module Key exposing (Event, Key(..), KeyType(..), decoder)
 
 import Json.Decode as Decode
+
+
+type alias Event =
+    KeyType
 
 
 type KeyType
