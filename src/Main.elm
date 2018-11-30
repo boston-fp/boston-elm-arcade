@@ -10,6 +10,7 @@ import Games.Chansey as Chansey
 import Games.Platformer.Model as PlatformerModel
 import Games.Platformer.Update as PlatformerUpdate
 import Games.Platformer.View as PlatformerView
+import Games.Sheep as Sheep
 import Games.Snake.Model as SnakeModel
 import Games.Snake.Update as SnakeUpdate
 import Games.Snake.View as SnakeView
