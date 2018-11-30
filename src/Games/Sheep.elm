@@ -47,21 +47,24 @@ type alias Vel =
     , y : Float
     }
 
+
 vminus : Vel -> Vel -> Vel
 vminus v1 v2 =
-  { x = v1.x - v2.x
-  , y = v1.y - v2.y
-  }
+    { x = v1.x - v2.x
+    , y = v1.y - v2.y
+    }
+
 
 vscale : Vel -> Float -> Vel
 vscale { x, y } s =
-  { x = s * x
-  , y = s * y
-  }
+    { x = s * x
+    , y = s * y
+    }
+
 
 vmagnitude : Vel -> Float
 vmagnitude vel =
-  sqrt (vel.x * vel.x + vel.y * vel.y)
+    sqrt (vel.x * vel.x + vel.y * vel.y)
 
 
 {-| Update an entity's position with its velocity.
@@ -76,16 +79,23 @@ integratePos dt entity =
     in
     { entity | pos = pos1 }
 
+
+
 -- Calculate a sheep's velocity, as a pure function of inputs. Currently, that's
 -- just the doggo (but in the future will include the other shep).
+
+
 calculateSheepVelocity : Doggo -> Sheep -> Vel
 calculateSheepVelocity doggo shep =
-  let
-      -- Vector pointing from dog to sheep
-      v1 = vminus shep.vel doggo.vel
-      one_over_mag = 1 / vmagnitude v1
-  in
-      vscale (vscale v1 one_over_mag) (min 2 one_over_mag)
+    let
+        -- Vector pointing from dog to sheep
+        v1 =
+            vminus shep.vel doggo.vel
+
+        one_over_mag =
+            1 / vmagnitude v1
+    in
+    vscale (vscale v1 one_over_mag) (min 2 one_over_mag)
 
 
 init : Model
@@ -97,7 +107,7 @@ init =
         }
     , sheep =
         [ Sheep (Pos 50 -150) (Vel 0 0)
-        , Sheep (Pos 0 0) (Vel 0 0)
+        , Sheep (Pos -100 50) (Vel 0 0)
         , Sheep (Pos 200 -50) (Vel 0 0)
         , Sheep (Pos 100 -50) (Vel 0 0)
         , Sheep (Pos -50 100) (Vel 0 0)
@@ -129,16 +139,51 @@ view model =
         , Hattr.style "align-items" "center"
         , Hattr.style "justify-content" "center"
         ]
-        [ svg <| group <| List.map viewSheep model.sheep ]
+        [ svg <| group <| viewDoggo model.doggo :: List.map viewSheep model.sheep ]
 
 
 viewSheep : Sheep -> Collage Msg
 viewSheep sheep =
-    rectangle
-        24
-        36
-        |> filled (uniform (rgb 220 220 220))
+    group
+        [ rectangle
+            -- body
+            24
+            36
+            |> filled (uniform (rgb 220 220 220))
+
+        -- |> shift ( sheep.pos.x, sheep.pos.y )
+        , rectangle
+            -- head
+            8
+            8
+            |> filled (uniform (rgb 20 20 20))
+            |> shift ( 0, 20 )
+        ]
         |> shift ( sheep.pos.x, sheep.pos.y )
+
+
+viewDoggo : Doggo -> Collage Msg
+viewDoggo doggo =
+    group
+        [ rectangle
+            -- body
+            20
+            36
+            |> filled (uniform (rgb 148 80 0))
+        , group
+            -- head
+            [ rectangle
+                12
+                14
+                |> filled (uniform (rgb 148 80 0))
+            , rectangle
+                16
+                8
+                |> filled (uniform (rgb 148 80 0))
+            ]
+            |> shift ( 0, 24 )
+        ]
+        |> shift ( doggo.pos.x, doggo.pos.y )
 
 
 subscriptions : Model -> Sub Msg
