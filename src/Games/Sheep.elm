@@ -15,17 +15,28 @@ import Key exposing (Key(..), KeyType(..))
 type alias Model =
     { doggo : Doggo
     , sheep : List Sheep
+    , windowSize : WindowSize
+    }
+
+
+type alias WindowSize =
+    { widthPx : Int
+    , heightPx : Int
     }
 
 
 type Msg
     = Tick Float
     | KeyEvent Key.Event
+    | WindowResized WindowSize
 
 
 type alias Doggo =
     { pos : Pos
-    , bearing : Bearing
+    , up : Bool
+    , down : Bool
+    , left : Bool
+    , right : Bool
     , angle : Float
     }
 
@@ -79,19 +90,24 @@ integratePos dt entity =
     pos1
 
 
-
--- Calculate a sheep's velocity, as a pure function of inputs. Currently, that's
--- just the doggo (but in the future will include the other shep).
-
-
+{-| Calculate a sheep's velocity, as a pure function of inputs. Currently,
+that's just the doggo (but in the future will include the other shep).
+-}
 calculateSheepVelocity : Doggo -> Sheep -> Vel
 calculateSheepVelocity doggo shep =
     let
         -- Vector pointing from dog to sheep
         v1 =
             vminus shep.pos doggo.pos
+
+        mag =
+            vmagnitude v1
     in
-    vscale v1 (min 2 (1 / vmagnitude v1))
+    if mag > 200 then
+        { x = 0, y = 0 }
+
+    else
+        vscale v1 (0.01 / mag)
 
 
 type Bearing
@@ -101,12 +117,15 @@ type Bearing
 
 
 doggoVel : Doggo -> Vel
-doggoVel { bearing, angle } =
+doggoVel { up, down, left, right, angle } =
     let
         vec =
             { x = cos angle
             , y = sin angle
             }
+
+        bearing =
+            Forward
 
         multiplier =
             case bearing of
@@ -126,7 +145,10 @@ init : Model
 init =
     { doggo =
         { pos = { x = 0, y = 0 }
-        , bearing = Halt
+        , up = False
+        , down = False
+        , left = False
+        , right = False
         , angle = 0
         }
     , sheep =
@@ -136,6 +158,7 @@ init =
         , Sheep (Pos 100 -50) (Vel 0 0) 4
         , Sheep (Pos -50 100) (Vel 0 0) 0.2
         ]
+    , windowSize = WindowSize 0 0
     }
 
 
@@ -166,14 +189,22 @@ update msg model =
             , Cmd.none
             )
 
-        KeyEvent e ->
-            pure <|
-                case e of
-                    KeyUp k ->
-                        model
+        WindowResized size ->
+            ( { model | windowSize = size }, Cmd.none )
 
-                    KeyDown k ->
-                        model
+        KeyEvent e ->
+            pure { model | doggo = pointDoggo e model.doggo }
+
+
+pointDoggo : Key.Event -> Doggo -> Doggo
+pointDoggo e doggo =
+    doggo
+
+
+
+-- case ( e, doggo.bearing ) of
+--     ( KeyDown Key.Up, _ ) ->
+--         { doggo | bearing = Forward }
 
 
 moveDoggo : Float -> { x | doggo : Doggo } -> Doggo
@@ -209,7 +240,7 @@ view model =
         , Hattr.style "justify-content" "center"
         ]
         [ svg <| group <| viewDoggo model.doggo :: List.map viewSheep model.sheep
-        , Html.text (Debug.toString model)
+        -- , Html.text (Debug.toString model)
         ]
 
 
@@ -271,4 +302,5 @@ subscriptions _ =
         [ Browser.Events.onAnimationFrameDelta Tick
         , Browser.Events.onKeyDown (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
         , Browser.Events.onKeyUp (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
+        , Browser.Events.onResize (\w h -> WindowResized (WindowSize w h))
         ]
