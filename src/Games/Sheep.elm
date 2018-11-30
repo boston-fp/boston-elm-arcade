@@ -103,11 +103,6 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    let
-        keyDecoder : Json.Decode.Decoder String
-        keyDecoder =
-            Json.Decode.field "key" Json.Decode.string
-    in
     Sub.batch
         [ Browser.Events.onAnimationFrameDelta Tick
         , Browser.Events.onKeyDown (Json.Decode.map Key Key.decoder)
