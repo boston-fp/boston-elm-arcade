@@ -26,6 +26,7 @@ type Game
     = Snake
     | Chansey
     | Platformer
+    | Sheep
 
 
 type GameState
@@ -33,6 +34,7 @@ type GameState
     | PlayingSnake SnakeModel.Model
     | PlayingChansey Chansey.Model
     | PlayingPlatformer PlatformerModel.Model
+    | PlayingSheep Sheep.Model
 
 
 gameStateParser : Parser (GameState -> a) a
@@ -45,6 +47,8 @@ gameStateParser =
             (s <| String.toLower <| gameName Chansey)
         , Url.Parser.map (PlayingPlatformer PlatformerModel.init)
             (s <| String.toLower <| gameName Platformer)
+        , Url.Parser.map (PlayingSheep Sheep.init)
+            (s <| String.toLower <| gameName Sheep)
         ]
 
 
@@ -60,10 +64,12 @@ gameName game =
         Platformer ->
             "Platformer"
 
+        Sheep -> "Sheep"
+
 
 games : List Game
 games =
-    [ Snake, Chansey, Platformer ]
+    [ Snake, Chansey, Platformer, Sheep ]
 
 
 type alias Model =
@@ -86,6 +92,7 @@ type Msg
     = SnakeMsg SnakeUpdate.Msg
     | ChanseyMsg Chansey.Msg
     | PlatformerMsg PlatformerUpdate.Msg
+    | SheepMsg Sheep.Msg
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
 
@@ -139,6 +146,15 @@ update msg model =
                 PlayingPlatformer platformerModel ->
                     ( PlatformerUpdate.update platformerMsg platformerModel, Cmd.none )
                         |> updateWith PlayingPlatformer PlatformerMsg model
+
+                _ ->
+                    ( model, Cmd.none )
+
+        SheepMsg sheepMsg ->
+            case model.gameState of
+                PlayingSheep sheepModel ->
+                    Sheep.update sheepMsg sheepModel
+                        |> updateWith PlayingSheep SheepMsg model
 
                 _ ->
                     ( model, Cmd.none )
@@ -219,6 +235,11 @@ view model =
             Browser.Document
                 (formatTitle (gameName Platformer))
                 [ Html.map PlatformerMsg (PlatformerView.view platformerModel) ]
+
+        PlayingSheep sheepModel ->
+            Browser.Document
+                (formatTitle (gameName Sheep))
+                [ Html.map SheepMsg (Sheep.view sheepModel) ]
 
 
 
