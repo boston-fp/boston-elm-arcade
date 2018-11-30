@@ -1,4 +1,4 @@
-module Games.Chansey.Column exposing (..)
+module Games.Chansey.Column exposing (Column(..), x)
 
 import Games.Chansey.Types exposing (..)
 

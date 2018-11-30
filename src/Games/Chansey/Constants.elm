@@ -1,4 +1,4 @@
-module Games.Chansey.Constants exposing (..)
+module Games.Chansey.Constants exposing (ymin)
 
 import Games.Chansey.Types exposing (..)
 

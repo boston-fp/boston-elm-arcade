@@ -1,4 +1,5 @@
-module Games.Chansey.EggType exposing (..)
+module Games.Chansey.EggType exposing (EggType(..), score)
+
 
 type EggType
     = EggTypeEgg

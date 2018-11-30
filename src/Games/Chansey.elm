@@ -1,4 +1,4 @@
-module Games.Chansey exposing (..)
+module Games.Chansey exposing (Model, Msg(..), ifSpace, init, main, subscriptions, update, view, viewBackground)
 
 import Browser
 import Browser.Events

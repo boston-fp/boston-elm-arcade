@@ -1,4 +1,4 @@
-module Games.Chansey.State exposing (..)
+module Games.Chansey.State exposing (State(..))
 
 
 type State

@@ -1,12 +1,11 @@
-module Games.Chansey.Egg
-    exposing
-        ( Egg
-        , FallResult(..)
-        , fall
-        , random
-        , typ
-        , view
-        )
+module Games.Chansey.Egg exposing
+    ( Egg
+    , FallResult(..)
+    , fall
+    , random
+    , typ
+    , view
+    )
 
 import Collage exposing (Collage)
 import Color
@@ -52,8 +51,10 @@ fall delta basket (Egg egg) =
             && (y1 <= Basket.y)
     then
         Caught egg.typ_
+
     else if y1 < Constants.ymin then
         Disappeared
+
     else
         Falling (Egg { egg | y = y1 })
 
@@ -76,6 +77,7 @@ random seed0 { min, max } =
         type_ =
             if n == 0 then
                 EggTypeBomb
+
             else
                 EggTypeEgg
     in

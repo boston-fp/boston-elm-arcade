@@ -1,11 +1,10 @@
-module Games.Chansey.EggTimer
-    exposing
-        ( EggTimer
-        , EggTimerStep(..)
-        , done
-        , new
-        , step
-        )
+module Games.Chansey.EggTimer exposing
+    ( EggTimer
+    , EggTimerStep(..)
+    , done
+    , new
+    , step
+    )
 
 import Games.Chansey.Egg as Egg exposing (Egg)
 import Games.Chansey.EggType exposing (EggType(..))
@@ -53,6 +52,7 @@ step : Milliseconds -> EggTimer -> EggTimerStep
 step delta (EggTimer timer) =
     if done (EggTimer timer) then
         EggTimerDone
+
     else
         case RecurringTimer.step delta timer.timer of
             RecurringTimer.Step timer1 ->

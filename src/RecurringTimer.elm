@@ -1,11 +1,10 @@
-module RecurringTimer
-    exposing
-        ( RecurringTimer
-        , Step(..)
-        , new
-        , newWithJitter
-        , step
-        )
+module RecurringTimer exposing
+    ( RecurringTimer
+    , Step(..)
+    , new
+    , newWithJitter
+    , step
+    )
 
 import Random
 
@@ -54,5 +53,6 @@ step delta (RecurringTimer seed0 gen time) =
                 Random.step gen seed0
         in
         Fire (RecurringTimer seed1 gen (time2 + time1))
+
     else
         Step (RecurringTimer seed0 gen time1)

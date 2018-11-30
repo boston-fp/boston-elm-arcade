@@ -1,4 +1,5 @@
-module Games.Chansey.Types exposing (..)
+module Games.Chansey.Types exposing (Milliseconds, X, Y, Y_Per_Millisecond)
+
 
 type alias Milliseconds =
     Float

@@ -1,4 +1,4 @@
-module Games.Chansey.Level exposing (..)
+module Games.Chansey.Level exposing (Config, Control(..), Model, Status(..), init, onTick, status, step, stepEggs, view)
 
 import Collage exposing (Collage)
 import Collage.Text
@@ -50,8 +50,10 @@ status model =
     if EggTimer.done model.eggtimer && List.isEmpty model.eggs then
         if model.score == model.config.numeggs then
             Won
+
         else
             Lost
+
     else
         Ongoing
 
@@ -72,6 +74,7 @@ init config =
             config.numeggs
     , score = 0
     }
+
 
 step : Control -> Model -> Model
 step control model =

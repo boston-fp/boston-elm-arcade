@@ -1,13 +1,12 @@
-module Games.Chansey.Basket
-    exposing
-        ( Basket
-        , Control(..)
-        , column
-        , new
-        , step
-        , view
-        , y
-        )
+module Games.Chansey.Basket exposing
+    ( Basket
+    , Control(..)
+    , column
+    , new
+    , step
+    , view
+    , y
+    )
 
 import Collage
 import Color
