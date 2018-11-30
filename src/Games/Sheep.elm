@@ -94,9 +94,32 @@ calculateSheepVelocity doggo shep =
     vscale v1 (min 2 (1 / vmagnitude v1))
 
 
+type Bearing
+    = Forward
+    | Halt
+    | Back
+
+
 doggoVel : Doggo -> Vel
-doggoVel _ =
-    { x = 0, y = 0 }
+doggoVel { bearing, angle } =
+    let
+        vec =
+            { x = cos angle
+            , y = sin angle
+            }
+
+        multiplier =
+            case bearing of
+                Forward ->
+                    1
+
+                Halt ->
+                    0
+
+                Back ->
+                    -1
+    in
+    vscale vec (multiplier * vmagnitude vec)
 
 
 init : Model
@@ -115,12 +138,6 @@ init =
         , Sheep (Pos -50 100) (Vel 0 0)
         ]
     }
-
-
-type Bearing
-    = Forward
-    | Halt
-    | Back
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -158,10 +175,10 @@ update msg model =
             logged <|
                 case e of
                     KeyUp k ->
-                        Debug.todo ""
+                        model
 
                     KeyDown k ->
-                        Debug.todo ""
+                        model
 
 
 moveDoggo : Float -> { x | doggo : Doggo } -> Doggo
