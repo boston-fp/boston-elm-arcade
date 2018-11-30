@@ -15,12 +15,20 @@ import Key exposing (Key(..), KeyType(..))
 type alias Model =
     { doggo : Doggo
     , sheep : List Sheep
+    , windowSize : WindowSize
+    }
+
+
+type alias WindowSize =
+    { widthPx : Int
+    , heightPx : Int
     }
 
 
 type Msg
     = Tick Float
     | KeyEvent Key.Event
+    | WindowResized WindowSize
 
 
 type alias Doggo =
@@ -135,6 +143,7 @@ init =
         , Sheep (Pos 100 -50) (Vel 0 0)
         , Sheep (Pos -50 100) (Vel 0 0)
         ]
+    , windowSize = WindowSize 0 0
     }
 
 
@@ -164,6 +173,9 @@ update msg model =
               }
             , Cmd.none
             )
+
+        WindowResized size ->
+            ( { model | windowSize = size }, Cmd.none )
 
         KeyEvent e ->
             pure <|
@@ -269,4 +281,5 @@ subscriptions _ =
         [ Browser.Events.onAnimationFrameDelta Tick
         , Browser.Events.onKeyDown (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
         , Browser.Events.onKeyUp (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
+        , Browser.Events.onResize (\w h -> WindowResized (WindowSize w h))
         ]
