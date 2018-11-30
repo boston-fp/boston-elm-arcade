@@ -33,6 +33,7 @@ type alias Doggo =
 type alias Sheep =
     { pos : Pos
     , vel : Vel
+    , mass : Float
     }
 
 
@@ -67,7 +68,7 @@ vmagnitude vel =
     sqrt (vel.x * vel.x + vel.y * vel.y)
 
 
-integratePos : Float -> { pos : Pos, vel : Vel } -> Pos
+integratePos : Float -> { r | pos : Pos, vel : Vel } -> Pos
 integratePos dt entity =
     let
         pos1 =
@@ -129,11 +130,11 @@ init =
         , angle = 0
         }
     , sheep =
-        [ Sheep (Pos 50 -150) (Vel 4 8)
-        , Sheep (Pos -100 50) (Vel 0 0)
-        , Sheep (Pos 200 -50) (Vel 0 0)
-        , Sheep (Pos 100 -50) (Vel 0 0)
-        , Sheep (Pos -50 100) (Vel 0 0)
+        [ Sheep (Pos 50 -150) (Vel 4 8) 0.5
+        , Sheep (Pos -100 50) (Vel 0 0) 1
+        , Sheep (Pos 200 -50) (Vel 0 0) 0.7
+        , Sheep (Pos 100 -50) (Vel 0 0) 4
+        , Sheep (Pos -50 100) (Vel 0 0) 0.2
         ]
     }
 
@@ -229,6 +230,7 @@ viewSheep sheep =
             |> filled (uniform (rgb 20 20 20))
             |> shift ( 20, 0 )
         ]
+        |> scale sheep.mass
         |> rotate (radians (atan2 sheep.vel.y sheep.vel.x))
         |> shift ( sheep.pos.x, sheep.pos.y )
 
