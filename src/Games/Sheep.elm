@@ -90,11 +90,8 @@ calculateSheepVelocity doggo shep =
         -- Vector pointing from dog to sheep
         v1 =
             vminus shep.vel (doggoVel doggo)
-
-        one_over_mag =
-            1 / vmagnitude v1
     in
-    vscale (vscale v1 one_over_mag) (min 2 one_over_mag)
+    vscale v1 (min 2 (1 / vmagnitude v1))
 
 
 doggoVel : Doggo -> Vel
