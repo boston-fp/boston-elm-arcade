@@ -15,7 +15,6 @@ import Key exposing (Key(..), KeyType(..))
 type alias Model =
     { doggo : Doggo
     , sheep : List Sheep
-    , lastmsg : Maybe Msg
     }
 
 
@@ -124,8 +123,7 @@ doggoVel { bearing, angle } =
 
 init : Model
 init =
-    { lastmsg = Nothing
-    , doggo =
+    { doggo =
         { pos = { x = 0, y = 0 }
         , bearing = Halt
         , angle = 0
@@ -143,12 +141,8 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        logged x =
-            ( { x
-                | lastmsg = Just msg
-              }
-            , Cmd.none
-            )
+        pure x =
+            ( x, Cmd.none )
     in
     case msg of
         Tick dt ->
@@ -172,7 +166,7 @@ update msg model =
             )
 
         KeyEvent e ->
-            logged <|
+            pure <|
                 case e of
                     KeyUp k ->
                         model
