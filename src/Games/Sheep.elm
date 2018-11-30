@@ -3,8 +3,8 @@ module Games.Sheep exposing (..)
 import Html exposing (Html)
 
 
-type Model
-    = Model
+type alias Model =
+    { lastmsg : Maybe Msg }
 
 
 type Msg
@@ -13,18 +13,19 @@ type Msg
 
 init : Model
 init =
-    Model
+    { lastmsg = Nothing }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update _ model =
-    ( model, Cmd.none )
+update msg model =
+    ( { model | lastmsg = Just msg }, Cmd.none )
 
 
 view : Model -> Html Msg
-view _ =
-    Html.text ""
-
+view model =
+    Html.div
+      []
+      [ Html.text (Debug.toString model) ]
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
