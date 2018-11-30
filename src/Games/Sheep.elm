@@ -11,6 +11,7 @@ import Html.Attributes as Hattr
 import Json.Decode
 import Key exposing (Key(..), KeyType(..))
 import P2 exposing (P2(..))
+import Radians
 import V2 exposing (V2(..))
 
 

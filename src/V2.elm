@@ -1,4 +1,6 @@
-module V2 exposing (V2(..), add, diff, dot, fromDegrees, fromRadians, lerp, negate, norm, overX, overY, perpendicular, project, quadrance, scale, signorm, toDegrees, toRadians, x, y, zero)
+module V2 exposing (V2(..), add, diff, dot, fromDegrees, fromRadians, lerp, negate, norm, overX, overY, project, quadrance, scale, signorm, toDegrees, toRadians, x, y, zero)
+
+import Radians exposing (Radians(..))
 
 
 type V2
@@ -22,11 +24,11 @@ dot (V2 vx vy) (V2 wx wy) =
 
 fromDegrees : Float -> V2
 fromDegrees =
-    degrees >> fromRadians
+    Radians.fromDegrees >> fromRadians
 
 
-fromRadians : Float -> V2
-fromRadians r =
+fromRadians : Radians -> V2
+fromRadians (Radians r) =
     V2 (cos r) (sin r)
 
 
@@ -57,13 +59,6 @@ overY f (V2 vx vy) =
     V2 vx (f vy)
 
 
-{-| Compute the counter-clockwise perpendicular vector.
--}
-perpendicular : V2 -> V2
-perpendicular (V2 vx vy) =
-    V2 -vy vx
-
-
 {-| 'project v w' computes the projection of 'w' onto 'v'.
 -}
 project : V2 -> V2 -> V2
@@ -76,6 +71,20 @@ project v w =
 quadrance : V2 -> Float
 quadrance v =
     dot v v
+
+
+{-| Rotate a vector.
+-}
+rotate : Radians -> V2 -> V2
+rotate (Radians r) (V2 vx vy) =
+    let
+        c =
+            cos r
+
+        s =
+            sin r
+    in
+    V2 (c * vx - s * vy) (s * vx - c * vy)
 
 
 scale : Float -> V2 -> V2
