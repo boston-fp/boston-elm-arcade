@@ -187,10 +187,11 @@ moveDoggo dt x =
         doggo =
             x.doggo
 
-        newPosVel =
-            integratePos dt { pos = x.doggo.pos, vel = Debug.todo "" }
+        newPos =
+            integratePos dt
+                { pos = x.doggo.pos, vel = doggoVel doggo }
     in
-    doggo
+    { doggo | pos = newPos }
 
 
 view : Model -> Html Msg
