@@ -64,7 +64,8 @@ gameName game =
         Platformer ->
             "Platformer"
 
-        Sheep -> "Sheep"
+        Sheep ->
+            "Sheep"
 
 
 games : List Game
@@ -253,8 +254,8 @@ subscriptions model =
     -- is resolved
     Sub.batch
         [ -- SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg
-        -- , Chansey.subscriptions Chansey.init |> Sub.map ChanseyMsg
-        -- , PlatformerUpdate.subs PlatformerModel.init |> Sub.map PlatformerMsg
+          -- , Chansey.subscriptions Chansey.init |> Sub.map ChanseyMsg
+          -- , PlatformerUpdate.subs PlatformerModel.init |> Sub.map PlatformerMsg
           Sheep.subscriptions Sheep.init |> Sub.map SheepMsg
         ]
 

@@ -1,4 +1,4 @@
-module Games.Sheep exposing (Doggo, Model, Msg(..), Pos, Sheep, Vel, init, integratePos, subscriptions, update, view)
+module Games.Sheep exposing (Doggo, Model, Msg(..), Sheep, init, integratePos, subscriptions, update, view)
 
 import Browser.Events
 import Collage exposing (..)
@@ -10,6 +10,8 @@ import Html exposing (Html)
 import Html.Attributes as Hattr
 import Json.Decode
 import Key exposing (Key(..), KeyType(..))
+import P2 exposing (P2(..))
+import V2 exposing (V2(..))
 
 
 type alias Model =
@@ -32,7 +34,7 @@ type Msg
 
 
 type alias Doggo =
-    { pos : Pos
+    { pos : P2
     , up : Bool
     , down : Bool
     , left : Bool
@@ -42,72 +44,35 @@ type alias Doggo =
 
 
 type alias Sheep =
-    { pos : Pos
-    , vel : Vel
+    { pos : P2
+    , vel : V2
     , mass : Float
     }
 
 
-type alias Pos =
-    { x : Float
-    , y : Float
-    }
-
-
-type alias Vel =
-    { x : Float
-    , y : Float
-    }
-
-
-vminus : Vel -> Vel -> Vel
-vminus v1 v2 =
-    { x = v1.x - v2.x
-    , y = v1.y - v2.y
-    }
-
-
-vscale : Vel -> Float -> Vel
-vscale { x, y } s =
-    { x = s * x
-    , y = s * y
-    }
-
-
-vmagnitude : Vel -> Float
-vmagnitude vel =
-    sqrt (vel.x * vel.x + vel.y * vel.y)
-
-
-integratePos : Float -> { r | pos : Pos, vel : Vel } -> Pos
+integratePos : Float -> { r | pos : P2, vel : V2 } -> P2
 integratePos dt entity =
-    let
-        pos1 =
-            { x = entity.pos.x + dt * entity.vel.x
-            , y = entity.pos.y + dt * entity.vel.y
-            }
-    in
-    pos1
+    P2.add entity.pos (V2.scale dt entity.vel)
 
 
 {-| Calculate a sheep's velocity, as a pure function of inputs. Currently,
 that's just the doggo (but in the future will include the other shep).
 -}
-calculateSheepVelocity : Doggo -> Sheep -> Vel
+calculateSheepVelocity : Doggo -> Sheep -> V2
 calculateSheepVelocity doggo shep =
     let
         -- Vector pointing from dog to sheep
         v1 =
-            vminus shep.pos doggo.pos
+            P2.diff shep.pos doggo.pos
 
-        mag =
-            vmagnitude v1
+        norm =
+            V2.norm v1
     in
-    if mag > 200 then
-        { x = 0, y = 0 }
+    if norm > 200 then
+        V2 0 0
 
     else
-        vscale v1 (0.01 / mag)
+        V2.scale (0.01 / norm) v1
 
 
 type Bearing
@@ -116,13 +81,11 @@ type Bearing
     | Back
 
 
-doggoVel : Doggo -> Vel
+doggoVel : Doggo -> V2
 doggoVel doggo =
     let
         vec =
-            { x = cos doggo.angle
-            , y = sin doggo.angle
-            }
+            V2.fromDegrees doggo.angle
 
         multiplier =
             case bearingDoggo doggo of
@@ -135,7 +98,7 @@ doggoVel doggo =
                 Back ->
                     -1
     in
-    vscale vec (multiplier * vmagnitude vec)
+    V2.scale multiplier vec
 
 
 bearingDoggo : Doggo -> Bearing
@@ -157,7 +120,7 @@ bearingDoggo d =
 init : Model
 init =
     { doggo =
-        { pos = { x = 0, y = 0 }
+        { pos = P2 0 0
         , up = False
         , down = False
         , left = False
@@ -165,11 +128,11 @@ init =
         , angle = 0
         }
     , sheep =
-        [ Sheep (Pos 50 -150) (Vel 4 8) 0.5
-        , Sheep (Pos -100 50) (Vel 0 0) 1
-        , Sheep (Pos 200 -50) (Vel 0 0) 0.7
-        , Sheep (Pos 100 -50) (Vel 0 0) 4
-        , Sheep (Pos -50 100) (Vel 0 0) 0.2
+        [ Sheep (P2 50 -150) (V2 4 8) 0.5
+        , Sheep (P2 -100 50) (V2 0 0) 1
+        , Sheep (P2 200 -50) (V2 0 0) 0.7
+        , Sheep (P2 100 -50) (V2 0 0) 4
+        , Sheep (P2 -50 100) (V2 0 0) 0.2
         ]
     , windowSize = WindowSize 0 0
     }
@@ -276,8 +239,8 @@ viewSheep sheep =
             |> shift ( 20, 0 )
         ]
         |> scale sheep.mass
-        |> rotate (radians (atan2 sheep.vel.y sheep.vel.x))
-        |> shift ( sheep.pos.x, sheep.pos.y )
+        |> rotate (V2.toRadians sheep.vel)
+        |> shift ( P2.x sheep.pos, P2.y sheep.pos )
 
 
 viewDoggo : Doggo -> Collage Msg
@@ -307,7 +270,7 @@ viewDoggo doggo =
             |> shift ( -20, 0 )
         ]
         |> rotate (degrees doggo.angle)
-        |> shift ( doggo.pos.x, doggo.pos.y )
+        |> shift ( P2.x doggo.pos, P2.y doggo.pos )
 
 
 subscriptions : Model -> Sub Msg
