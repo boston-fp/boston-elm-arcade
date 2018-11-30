@@ -117,29 +117,15 @@ type Bearing
 
 
 doggoVel : Doggo -> Vel
-doggoVel { up, down, left, right, angle } =
+doggoVel doggo =
     let
         vec =
-            { x = cos angle
-            , y = sin angle
+            { x = cos doggo.angle
+            , y = sin doggo.angle
             }
 
-        bearing =
-            case ( up, down ) of
-                ( True, True ) ->
-                    Halt
-
-                ( True, False ) ->
-                    Forward
-
-                ( False, True ) ->
-                    Back
-
-                ( False, False ) ->
-                    Halt
-
         multiplier =
-            case bearing of
+            case bearingDoggo doggo of
                 Forward ->
                     1
 
@@ -150,6 +136,22 @@ doggoVel { up, down, left, right, angle } =
                     -1
     in
     vscale vec (multiplier * vmagnitude vec)
+
+
+bearingDoggo : Doggo -> Bearing
+bearingDoggo d =
+    case ( d.up, d.down ) of
+        ( True, True ) ->
+            Halt
+
+        ( True, False ) ->
+            Forward
+
+        ( False, True ) ->
+            Back
+
+        ( False, False ) ->
+            Halt
 
 
 init : Model
@@ -251,6 +253,7 @@ view model =
         , Hattr.style "justify-content" "center"
         ]
         [ svg <| group <| viewDoggo model.doggo :: List.map viewSheep model.sheep
+
         -- , Html.text (Debug.toString model)
         ]
 
