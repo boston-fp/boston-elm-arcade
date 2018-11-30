@@ -125,7 +125,18 @@ doggoVel { up, down, left, right, angle } =
             }
 
         bearing =
-            Forward
+            case ( up, down ) of
+                ( True, True ) ->
+                    Halt
+
+                ( True, False ) ->
+                    Forward
+
+                ( False, True ) ->
+                    Back
+
+                ( False, False ) ->
+                    Halt
 
         multiplier =
             case bearing of
