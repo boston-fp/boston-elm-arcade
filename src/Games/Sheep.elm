@@ -76,6 +76,18 @@ calculateSheepVelocity doggo shep =
         V2.scale (0.01 / norm) v1
 
 
+{-| 'repel p q' calculates a vector pointing away from 'p', with norm
+proportional to the inverse square of the distance bewteen 'p' and 'q'.
+-}
+repel : { r | pos : P2 } -> { r | pos : P2 } -> V2
+repel pariah senpai =
+    let
+        vec =
+            P2.diff senpai.pos pariah.pos
+    in
+    V2.scale (1 / V2.quadrance vec) vec
+
+
 type Bearing
     = Forward
     | Halt
