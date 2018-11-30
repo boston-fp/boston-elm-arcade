@@ -108,7 +108,7 @@ init =
         , angle = 0
         }
     , sheep =
-        [ Sheep (Pos 50 -150) (Vel 0 0)
+        [ Sheep (Pos 50 -150) (Vel 4 8)
         , Sheep (Pos -100 50) (Vel 0 0)
         , Sheep (Pos 200 -50) (Vel 0 0)
         , Sheep (Pos 100 -50) (Vel 0 0)
@@ -189,8 +189,8 @@ viewSheep sheep =
     group
         [ rectangle
             -- body
-            24
             36
+            24
             |> filled (uniform (rgb 220 220 220))
 
         -- |> shift ( sheep.pos.x, sheep.pos.y )
@@ -199,8 +199,9 @@ viewSheep sheep =
             8
             8
             |> filled (uniform (rgb 20 20 20))
-            |> shift ( 0, 20 )
+            |> shift ( 20, 0 )
         ]
+        |> rotate (radians (atan2 sheep.vel.y sheep.vel.x))
         |> shift ( sheep.pos.x, sheep.pos.y )
 
 
@@ -209,22 +210,28 @@ viewDoggo doggo =
     group
         [ rectangle
             -- body
-            20
             36
+            20
             |> filled (uniform (rgb 148 80 0))
         , group
             -- head
             [ rectangle
-                12
                 14
+                12
                 |> filled (uniform (rgb 148 80 0))
             , rectangle
-                16
                 8
-                |> filled (uniform (rgb 148 80 0))
+                16
+                |> filled (uniform (rgb 128 60 0))
             ]
-            |> shift ( 0, 24 )
+            |> shift ( 24, 0 )
+        , rectangle
+            24
+            4
+            |> filled (uniform (rgb 148 80 0))
+            |> shift ( -20, 0 )
         ]
+        |> rotate (degrees doggo.angle)
         |> shift ( doggo.pos.x, doggo.pos.y )
 
 
