@@ -12,7 +12,7 @@ import Html.Attributes as Hattr
 import Json.Decode
 import Key exposing (Key(..), KeyType(..))
 import P2 exposing (P2(..))
-import Radians
+import Radians exposing (Radians(..))
 import V2 exposing (V2(..))
 
 
@@ -41,7 +41,7 @@ type alias Doggo =
     , down : Bool
     , left : Bool
     , right : Bool
-    , angle : Float
+    , angle : Radians
     }
 
 
@@ -57,7 +57,7 @@ integratePos dt entity =
     P2.add entity.pos (V2.scale dt entity.vel)
 
 
-{-| Calculate a sheep's velocity, as a pure function of inputs. Currently,
+{-| Calculate a sheep's velocity, as a pure of inputs. Currently,
 that's just the doggo (but in the future will include the other shep).
 -}
 calculateSheepVelocity : Doggo -> Sheep -> V2
@@ -89,7 +89,7 @@ doggoVel : Doggo -> V2
 doggoVel doggo =
     let
         vec =
-            V2.fromDegrees doggo.angle
+            V2.fromRadians doggo.angle
 
         multiplier =
             case bearingDoggo doggo of
@@ -129,7 +129,7 @@ init =
         , down = False
         , left = False
         , right = False
-        , angle = 0
+        , angle = Radians 0
         }
     , sheep =
         [ Sheep (P2 50 -150) (V2 4 8) 0.5
@@ -145,7 +145,7 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        pure x =
+        noCmd x =
             ( x, Cmd.none )
     in
     case msg of
@@ -163,7 +163,7 @@ update msg model =
                         model.sheep
             in
             ( { model
-                | doggo = moveDoggo dt model
+                | doggo = moveDoggo dt model.doggo
                 , sheep = sheep1
               }
             , Cmd.none
@@ -173,12 +173,38 @@ update msg model =
             ( { model | windowSize = size }, Cmd.none )
 
         KeyEvent e ->
-            pure { model | doggo = pointDoggo e model.doggo }
+            noCmd { model | doggo = pointDoggo e model.doggo }
 
 
 pointDoggo : Key.Event -> Doggo -> Doggo
 pointDoggo e doggo =
-    doggo
+    case e of
+        KeyUp Key.Left ->
+            { doggo | left = False }
+
+        KeyUp Key.Right ->
+            { doggo | right = False }
+
+        KeyDown Key.Left ->
+            { doggo | left = True }
+
+        KeyDown Key.Right ->
+            { doggo | right = True }
+
+        KeyUp Key.Up ->
+            { doggo | up = False }
+
+        KeyUp Key.Down ->
+            { doggo | down = False }
+
+        KeyDown Key.Up ->
+            { doggo | up = True }
+
+        KeyDown Key.Down ->
+            { doggo | down = True }
+
+        _ ->
+            doggo
 
 
 
@@ -187,17 +213,36 @@ pointDoggo e doggo =
 --         { doggo | bearing = Forward }
 
 
-moveDoggo : Float -> { x | doggo : Doggo } -> Doggo
-moveDoggo dt x =
+moveDoggo : Float -> Doggo -> Doggo
+moveDoggo dt doggo =
     let
-        doggo =
-            x.doggo
+        turntRate =
+            Basics.pi / 1600
 
+        angleDt : Radians
+        angleDt =
+            Radians <|
+                turntRate
+                    * dt
+                    * (case ( doggo.left, doggo.right ) of
+                        ( True, False ) ->
+                            -1
+
+                        ( False, True ) ->
+                            1
+
+                        _ ->
+                            0
+                      )
+
+        newPos : P2
         newPos =
             integratePos dt
-                { pos = x.doggo.pos, vel = doggoVel doggo }
+                { pos = doggo.pos
+                , vel = doggoVel doggo
+                }
     in
-    { doggo | pos = newPos }
+    { doggo | pos = newPos, angle = Radians.add doggo.angle angleDt }
 
 
 view : Model -> Html Msg
@@ -273,7 +318,7 @@ viewDoggo doggo =
             |> filled (uniform (rgb 148 80 0))
             |> shift ( -20, 0 )
         ]
-        |> rotate (degrees doggo.angle)
+        |> rotate (radians <| Radians.unwrap doggo.angle)
         |> shift ( P2.x doggo.pos, P2.y doggo.pos )
 
 
