@@ -1,4 +1,4 @@
-module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, negate, norm, overX, overY, project, quadrance, scale, signorm, toDegrees, toRadians, x, y, zero)
+module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, negate, norm, overX, overY, project, quadrance, rotate, scale, signorm, toDegrees, toRadians, x, y, zero)
 
 import Radians exposing (Radians(..))
 
@@ -108,7 +108,7 @@ rotate (Radians r) (V2 vx vy) =
         s =
             sin r
     in
-    V2 (c * vx - s * vy) (s * vx - c * vy)
+    V2 (c * vx - s * vy) (s * vx + c * vy)
 
 
 scale : Float -> V2 -> V2

@@ -14,6 +14,7 @@ import Json.Decode
 import Key exposing (Key(..), KeyType(..))
 import P2 exposing (P2(..))
 import Radians exposing (Radians(..))
+import SelectList exposing (SelectList)
 import V2 exposing (V2(..))
 
 
@@ -93,14 +94,80 @@ integratePos frames entity =
     P2.add entity.pos (V2.scale frames entity.vel)
 
 
-{-| Calculate a sheep's velocity, as a pure of inputs. Currently,
-that's just the doggo (but in the future will include the other shep).
--}
-calculateSheepVelocity : Doggo -> Sheep -> V2
-calculateSheepVelocity doggo shep =
+updateSheep : Float -> Doggo -> List Sheep -> List Sheep
+updateSheep frames doggo =
+    SelectList.selectedMapForList
+        (\flock ->
+            let
+                ( herd1, sheep, herd2 ) =
+                    SelectList.toTuple flock
+
+                -- The herd within the sheep's awareness.
+                nearbyHerd : List Sheep
+                nearbyHerd =
+                    List.filter
+                        (\nearbySheep ->
+                            P2.distanceBetween sheep.pos nearbySheep.pos
+                                <= sheepAwarenessRadius
+                        )
+                        (herd1 ++ herd2)
+
+                herdVelocity : V2
+                herdVelocity =
+                    List.foldl
+                        (.vel >> V2.add)
+                        V2.zero
+                        nearbyHerd
+
+                angleToHerdVelocity : Radians
+                angleToHerdVelocity =
+                    V2.angleBetween sheep.vel herdVelocity
+
+                angleToRotate : Radians
+                angleToRotate =
+                    let
+                        angle =
+                            Radians.mult (Radians frames) sheepTurnRate
+                    in
+                    -- Avoid over-rotation: if the sheep can rotate to become
+                    -- parallel with the flock this frame, then do so
+                    if Radians.gte angle (Radians.abs angleToHerdVelocity) then
+                        angleToHerdVelocity
+
+                    else
+                        Radians.mult
+                            (Radians (Radians.signum angleToHerdVelocity))
+                            angle
+            in
+            { sheep | vel = V2.rotate angleToRotate sheep.vel }
+        )
+
+
+calculateSheepVelocity : Doggo -> List Sheep -> Sheep -> V2
+calculateSheepVelocity doggo herd shep =
     repel doggo shep
         |> V2.scale (100 / shep.mass)
         |> V2.maxNorm maxSheepVelocity
+
+
+
+-- let
+--     sheep1 : List Sheep
+--     sheep1 =
+--         List.map
+--             (\sheep ->
+--                 { sheep
+--                     | pos = integratePos frames sheep
+--                     , vel = calculateSheepVelocity model.doggo sheep
+--                 }
+--             )
+--             model.sheep
+-- in
+-- noCmd
+--     { model
+--         | doggo = moveDoggo frames model.doggo
+--         , sheep = sheep1
+--     }
 
 
 {-| 'repel p q' calculates a vector pointing from 'p' to 'q', with norm
@@ -200,16 +267,11 @@ update msg model =
     case msg of
         Frame frames ->
             let
-                sheep1 : List Sheep
                 sheep1 =
-                    List.map
-                        (\sheep ->
-                            { sheep
-                                | pos = integratePos frames sheep
-                                , vel = calculateSheepVelocity model.doggo sheep
-                            }
-                        )
-                        model.sheep
+                    updateSheep frames model.doggo model.sheep
+
+                doggo1 =
+                    moveDoggo frames model.doggo
             in
             noCmd
                 { model
@@ -414,6 +476,20 @@ main =
 -- Constants
 
 
+{-| Velocity per frame
+-}
 maxSheepVelocity : Float
 maxSheepVelocity =
     1
+
+
+{-| Radians per frame
+-}
+sheepTurnRate : Radians
+sheepTurnRate =
+    Radians 0.01
+
+
+sheepAwarenessRadius : Float
+sheepAwarenessRadius =
+    40
