@@ -333,7 +333,7 @@ subscriptions _ =
     Sub.batch
         [ Browser.Events.onAnimationFrameDelta (\s -> Frame (s * 3/50))
         , Browser.Events.onKeyDown (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
-        , Browser.Events.onKeyUp (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
+        , Browser.Events.onKeyUp (Json.Decode.map (KeyEvent << KeyUp) Key.decoder)
         , Browser.Events.onResize (\w h -> WindowResized (WindowSize w h))
         ]
 
