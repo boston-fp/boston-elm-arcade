@@ -1,4 +1,4 @@
-module P2 exposing (P2(..), add, diff, x, y)
+module P2 exposing (P2(..), add, asTuple, diff, x, y)
 
 import V2 exposing (V2(..))
 
@@ -25,3 +25,8 @@ x (P2 px _) =
 y : P2 -> Float
 y (P2 _ py) =
     py
+
+
+asTuple : P2 -> ( Float, Float )
+asTuple (P2 ex why) =
+    ( ex, why )

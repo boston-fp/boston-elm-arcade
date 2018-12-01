@@ -5,8 +5,9 @@ import Browser.Events
 import Collage exposing (..)
 import Collage.Layout exposing (..)
 import Collage.Render as Render exposing (svg)
-import Collage.Text exposing (..)
+import Collage.Text as Text exposing (..)
 import Color exposing (Color, rgb)
+import Dict.Any exposing (AnyDict)
 import Html exposing (Html)
 import Html.Attributes as Hattr
 import Json.Decode
@@ -19,9 +20,14 @@ import V2 exposing (V2(..))
 type alias Model =
     { doggo : Doggo
     , sheep : List Sheep
+    , borks : Borks
     , windowSize : WindowSize
     , totalFrames : Float
     }
+
+
+type alias Borks =
+    AnyDict ( Float, Float ) P2 Bork
 
 
 type alias WindowSize =
@@ -44,6 +50,35 @@ type alias Doggo =
     , right : Bool
     , angle : Radians
     }
+
+
+type alias Bork =
+    { dir : V2
+    , framesLeft : Float
+    }
+
+
+newBork : Doggo -> Borks -> Borks
+newBork doggo =
+    Dict.Any.update doggo.pos
+        (\existingBork ->
+            case existingBork of
+                Just bork ->
+                    Just bork
+
+                Nothing ->
+                    Just
+                        { dir = V2.signorm (doggoVel doggo)
+                        , framesLeft = 10
+                        }
+        )
+
+
+stepBorks : Float -> Borks -> Borks
+stepBorks frames borks =
+    borks
+        |> Dict.Any.map (\_ bork -> { bork | framesLeft = bork.framesLeft - 1 })
+        |> Dict.Any.filter (\_ bork -> bork.framesLeft > 0)
 
 
 type alias Sheep =
@@ -141,6 +176,7 @@ init =
         , right = False
         , angle = Radians 0
         }
+    , borks = Dict.Any.empty P2.asTuple
     , sheep =
         [ Sheep (P2 50 -150) (V2 4 8) 0.5
         , Sheep (P2 -100 50) (V2 0 0) 1
@@ -180,13 +216,20 @@ update msg model =
                     | doggo = moveDoggo frames model.doggo
                     , sheep = sheep1
                     , totalFrames = model.totalFrames + frames
+                    , borks = stepBorks frames model.borks
                 }
 
         WindowResized size ->
             noCmd { model | windowSize = size }
 
         KeyEvent e ->
-            noCmd { model | doggo = setKey e model.doggo }
+            noCmd <|
+                case e of
+                    KeyDown Key.Space ->
+                        { model | borks = newBork model.doggo model.borks }
+
+                    _ ->
+                        { model | doggo = setKey e model.doggo }
 
 
 setKey : Key.Event -> Doggo -> Doggo
@@ -271,10 +314,27 @@ view model =
         , Hattr.style "align-items" "center"
         , Hattr.style "justify-content" "center"
         ]
-        [ svg <| group <| viewDoggo model.doggo model.totalFrames :: List.map viewSheep model.sheep
+        [ svg <|
+            group <|
+                viewBorks model.borks
+                    :: viewDoggo model.doggo model.totalFrames
+                    :: List.map viewSheep model.sheep
 
         -- , Html.text (Debug.toString model)
         ]
+
+
+viewBorks : Borks -> Collage msg
+viewBorks borks =
+    Dict.Any.toList borks
+        |> List.map
+            (\( pos, bork ) ->
+                Text.fromString "bork!"
+                    |> rendered
+                    |> shift (P2.asTuple pos)
+                    |> scale bork.framesLeft
+            )
+        |> group
 
 
 viewSheep : Sheep -> Collage Msg
