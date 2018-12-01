@@ -97,20 +97,21 @@ doggoVel doggo =
         vec =
             V2.fromRadians doggo.angle
 
-        multiplier =
-            16
-                * (case bearingDoggo doggo of
-                    Forward ->
-                        1
+        magnitude =
+            10
 
-                    Halt ->
-                        0
+        sign =
+            case bearingDoggo doggo of
+                Forward ->
+                    1
 
-                    Back ->
-                        -1
-                  )
+                Halt ->
+                    0
+
+                Back ->
+                    -1
     in
-    V2.scale multiplier vec
+    V2.scale (magnitude * sign) vec
 
 
 bearingDoggo : Doggo -> Bearing
