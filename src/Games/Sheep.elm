@@ -30,7 +30,7 @@ type alias WindowSize =
 
 
 type Msg
-    = Tick Float
+    = Frame Float
     | KeyEvent Key.Event
     | WindowResized WindowSize
 
@@ -53,8 +53,8 @@ type alias Sheep =
 
 
 integratePos : Float -> { r | pos : P2, vel : V2 } -> P2
-integratePos dt entity =
-    P2.add entity.pos (V2.scale dt entity.vel)
+integratePos frames entity =
+    P2.add entity.pos (V2.scale frames entity.vel)
 
 
 {-| Calculate a sheep's velocity, as a pure of inputs. Currently,
@@ -63,12 +63,18 @@ that's just the doggo (but in the future will include the other shep).
 calculateSheepVelocity : Doggo -> Sheep -> V2
 calculateSheepVelocity doggo shep =
     repel doggo shep
-        |> V2.maxNorm 0.05
-        |> V2.scale (1 / shep.mass)
+        |> V2.scale (100 / shep.mass)
+        |> V2.maxNorm maxSheepVelocity
 
 
-{-| 'repel p q' calculates a vector pointing away from 'p', with norm
+{-| 'repel p q' calculates a vector pointing from 'p' to 'q', with norm
 proportional to the inverse square of the distance bewteen 'p' and 'q'.
+
+        ↗    <-- returned vector
+      q
+
+   p
+
 -}
 repel : { r | pos : P2 } -> { s | pos : P2 } -> V2
 repel pariah senpai =
@@ -149,21 +155,21 @@ update msg model =
             ( x, Cmd.none )
     in
     case msg of
-        Tick dt ->
+        Frame frames ->
             let
                 sheep1 : List Sheep
                 sheep1 =
                     List.map
                         (\sheep ->
                             { sheep
-                                | pos = integratePos dt sheep
+                                | pos = integratePos frames sheep
                                 , vel = calculateSheepVelocity model.doggo sheep
                             }
                         )
                         model.sheep
             in
             ( { model
-                | doggo = moveDoggo dt model.doggo
+                | doggo = moveDoggo frames model.doggo
                 , sheep = sheep1
               }
             , Cmd.none
@@ -214,16 +220,16 @@ setKey e doggo =
 
 
 moveDoggo : Float -> Doggo -> Doggo
-moveDoggo dt doggo =
+moveDoggo frames doggo =
     let
         turntRate =
-            Basics.pi / 1600
+            Basics.pi / 100
 
         angleDt : Radians
         angleDt =
             Radians <|
                 turntRate
-                    * dt
+                    * frames
                     * (case ( doggo.left, doggo.right ) of
                         ( True, False ) ->
                             -1
@@ -237,7 +243,7 @@ moveDoggo dt doggo =
 
         newPos : P2
         newPos =
-            integratePos dt
+            integratePos frames
                 { pos = doggo.pos
                 , vel = doggoVel doggo
                 }
@@ -325,7 +331,7 @@ viewDoggo doggo =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ Browser.Events.onAnimationFrameDelta Tick
+        [ Browser.Events.onAnimationFrameDelta (\s -> Frame (s * 3/50))
         , Browser.Events.onKeyDown (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
         , Browser.Events.onKeyUp (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
         , Browser.Events.onResize (\w h -> WindowResized (WindowSize w h))
@@ -340,3 +346,8 @@ main =
         , update = update
         , subscriptions = subscriptions
         }
+
+-- Constants
+
+maxSheepVelocity : Float
+maxSheepVelocity = 1
