@@ -20,6 +20,7 @@ type alias Model =
     { doggo : Doggo
     , sheep : List Sheep
     , windowSize : WindowSize
+    , totalFrames : Float
     }
 
 
@@ -143,10 +144,13 @@ init =
         [ Sheep (P2 50 -150) (V2 4 8) 0.5
         , Sheep (P2 -100 50) (V2 0 0) 1
         , Sheep (P2 200 -50) (V2 0 0) 0.7
-        , Sheep (P2 100 -50) (V2 0 0) 4
-        , Sheep (P2 -50 100) (V2 0 0) 0.2
+        , Sheep (P2 100 -50) (V2 0 0) 2
+        , Sheep (P2 -50 100) (V2 0 0) 0.4
+        , Sheep (P2 -100 -50) (V2 0 0) 0.8
+        , Sheep (P2 0 -100) (V2 0 0) 1.2
         ]
     , windowSize = WindowSize 0 0
+    , totalFrames = 0
     }
 
 
@@ -173,6 +177,7 @@ update msg model =
             ( { model
                 | doggo = moveDoggo frames model.doggo
                 , sheep = sheep1
+                , totalFrames = model.totalFrames + frames
               }
             , Cmd.none
             )
@@ -272,7 +277,7 @@ view model =
         , Hattr.style "align-items" "center"
         , Hattr.style "justify-content" "center"
         ]
-        [ svg <| group <| viewDoggo model.doggo :: List.map viewSheep model.sheep
+        [ svg <| group <| viewDoggo model.doggo model.totalFrames :: List.map viewSheep model.sheep
 
         -- , Html.text (Debug.toString model)
         ]
@@ -296,8 +301,8 @@ viewSheep sheep =
         |> shift ( P2.x sheep.pos, P2.y sheep.pos )
 
 
-viewDoggo : Doggo -> Collage Msg
-viewDoggo doggo =
+viewDoggo : Doggo -> Float -> Collage Msg
+viewDoggo doggo frames =
     let
         body =
             rectangle
@@ -320,12 +325,13 @@ viewDoggo doggo =
 
         tail =
             rectangle
-                24
+                40
                 4
                 |> filled (uniform (rgb 148 80 0))
-                |> shift ( -10, 0 )
+                |> shift ( -16, 0 )
+                |> rotate (sin (frames / (pi * 4)) / 4)
     in
-    group [ body |> at left tail, head ]
+    group [ body, tail, head ]
         |> rotate (radians <| Radians.unwrap doggo.angle)
         |> shift ( P2.x doggo.pos, P2.y doggo.pos )
 
