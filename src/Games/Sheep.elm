@@ -170,15 +170,14 @@ update msg model =
                         )
                         model.sheep
             in
-            ( { model
-                | doggo = moveDoggo frames model.doggo
-                , sheep = sheep1
-              }
-            , Cmd.none
-            )
+            noCmd
+                { model
+                    | doggo = moveDoggo frames model.doggo
+                    , sheep = sheep1
+                }
 
         WindowResized size ->
-            ( { model | windowSize = size }, Cmd.none )
+            noCmd { model | windowSize = size }
 
         KeyEvent e ->
             noCmd { model | doggo = setKey e model.doggo }
