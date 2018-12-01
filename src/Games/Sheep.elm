@@ -98,20 +98,21 @@ doggoVel doggo =
         vec =
             V2.fromRadians doggo.angle
 
-        multiplier =
-            16
-                * (case bearingDoggo doggo of
-                    Forward ->
-                        1
+        magnitude =
+            10
 
-                    Halt ->
-                        0
+        sign =
+            case bearingDoggo doggo of
+                Forward ->
+                    1
 
-                    Back ->
-                        -1
-                  )
+                Halt ->
+                    0
+
+                Back ->
+                    -1
     in
-    V2.scale multiplier vec
+    V2.scale (magnitude * sign) vec
 
 
 bearingDoggo : Doggo -> Bearing
@@ -174,16 +175,15 @@ update msg model =
                         )
                         model.sheep
             in
-            ( { model
-                | doggo = moveDoggo frames model.doggo
-                , sheep = sheep1
-                , totalFrames = model.totalFrames + frames
-              }
-            , Cmd.none
-            )
+            noCmd
+                { model
+                    | doggo = moveDoggo frames model.doggo
+                    , sheep = sheep1
+                    , totalFrames = model.totalFrames + frames
+                }
 
         WindowResized size ->
-            ( { model | windowSize = size }, Cmd.none )
+            noCmd { model | windowSize = size }
 
         KeyEvent e ->
             noCmd { model | doggo = setKey e model.doggo }
@@ -218,12 +218,6 @@ setKey e doggo =
 
         _ ->
             doggo
-
-
-
--- case ( e, doggo.bearing ) of
---     ( KeyDown Key.Up, _ ) ->
---         { doggo | bearing = Forward }
 
 
 moveDoggo : Float -> Doggo -> Doggo

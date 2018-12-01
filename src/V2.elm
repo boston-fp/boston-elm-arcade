@@ -1,4 +1,4 @@
-module V2 exposing (V2(..), add, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, negate, norm, overX, overY, project, quadrance, scale, signorm, toDegrees, toRadians, x, y, zero)
+module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, negate, norm, overX, overY, project, quadrance, scale, signorm, toDegrees, toRadians, x, y, zero)
 
 import Radians exposing (Radians(..))
 
@@ -10,6 +10,14 @@ type V2
 add : V2 -> V2 -> V2
 add (V2 vx vy) (V2 wx wy) =
     V2 (vx + wx) (vy + wy)
+
+
+{-| 'angleBetween v w' calculates the angle that 'v' must rotate by to be
+parallel to 'w'.
+-}
+angleBetween : V2 -> V2 -> Radians
+angleBetween (V2 vx vy) (V2 wx wy) =
+    Radians (atan2 wy wx - atan2 vy vx)
 
 
 diff : V2 -> V2 -> V2
