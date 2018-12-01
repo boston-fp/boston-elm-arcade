@@ -86,7 +86,15 @@ type alias Sheep =
     { pos : P2
     , vel : V2
     , mass : Float
+    , food : Float
+    , state : SheepState
     }
+
+
+type SheepState
+    = Flocking
+    | Grazing
+    | Sleeping
 
 
 integratePos : Float -> { r | pos : P2, vel : V2 } -> P2
@@ -94,61 +102,91 @@ integratePos frames entity =
     P2.add entity.pos (V2.scale frames entity.vel)
 
 
-updateSheep : Float -> Doggo -> List Sheep -> List Sheep
-updateSheep frames doggo =
+updateFlock : Float -> Doggo -> (List Sheep -> List Sheep)
+updateFlock frames doggo =
     SelectList.selectedMapForList
         (\flock ->
             let
                 ( herd1, sheep, herd2 ) =
                     SelectList.toTuple flock
-
-                -- The herd within the sheep's awareness.
-                nearbyHerd : List Sheep
-                nearbyHerd =
-                    List.filter
-                        (\nearbySheep ->
-                            P2.distanceBetween sheep.pos nearbySheep.pos
-                                <= sheepAwarenessRadius
-                        )
-                        (herd1 ++ herd2)
-
-                herdVelocity : V2
-                herdVelocity =
-                    List.foldl
-                        (.vel >> V2.add)
-                        V2.zero
-                        nearbyHerd
-
-                angleToHerdVelocity : Radians
-                angleToHerdVelocity =
-                    V2.angleBetween sheep.vel herdVelocity
-
-                angleToRotate : Radians
-                angleToRotate =
-                    let
-                        angle =
-                            Radians.mult (Radians frames) sheepTurnRate
-                    in
-                    -- Avoid over-rotation: if the sheep can rotate to become
-                    -- parallel with the flock this frame, then do so
-                    if Radians.gte angle (Radians.abs angleToHerdVelocity) then
-                        angleToHerdVelocity
-
-                    else
-                        Radians.mult
-                            (Radians (Radians.signum angleToHerdVelocity))
-                            angle
             in
-            { sheep
-                | vel = V2.rotate angleToRotate sheep.vel
-                          |> V2.maxNorm maxSheepVelocity
-                , pos = integratePos frames sheep
-            }
+            updateSheep (herd1 ++ herd2) frames sheep
         )
 
 
-calculateSheepVelocity : Doggo -> List Sheep -> Sheep -> V2
-calculateSheepVelocity doggo herd shep =
+updateSheep : List Sheep -> Float -> Sheep -> Sheep
+updateSheep flock frames sheep =
+    let
+        -- The herd within the sheep's awareness.
+        nearbyHerd : List Sheep
+        nearbyHerd =
+            List.filter
+                (\nearbySheep ->
+                    P2.distanceBetween sheep.pos nearbySheep.pos
+                        <= sheepAwarenessRadius
+                )
+                flock
+
+        herdVelocity : V2
+        herdVelocity =
+            List.foldl
+                (.vel >> V2.add)
+                V2.zero
+                nearbyHerd
+
+        angleToHerdVelocity : Radians
+        angleToHerdVelocity =
+            V2.angleBetween sheep.vel herdVelocity
+
+        angleToRotate : Radians
+        angleToRotate =
+            let
+                angle =
+                    Radians.mult (Radians frames) sheepTurnRate
+            in
+            -- Avoid over-rotation: if the sheep can rotate to become
+            -- parallel with the flock this frame, then do so
+            if Radians.gte angle (Radians.abs angleToHerdVelocity) then
+                angleToHerdVelocity
+
+            else
+                Radians.mult
+                    (Radians (Radians.signum angleToHerdVelocity))
+                    angle
+
+        newSheep =
+            { sheep
+                | vel =
+                    V2.rotate angleToRotate sheep.vel
+                        |> V2.maxNorm maxSheepVelocity
+                , pos = integratePos frames sheep
+                , food = sheep.food - (foodLossRate * frames)
+            }
+    in
+    case sheep.state of
+        Flocking ->
+            if sheep.food < 0.5 then
+                { newSheep | state = Grazing }
+
+            else
+                newSheep
+
+        Grazing ->
+            if sheep.food > 1 then
+                { newSheep | state = Flocking }
+
+            else
+                newSheep
+
+        Sleeping ->
+            newSheep
+
+
+{-| Calculate a sheep's velocity, as a pure of inputs. Currently,
+that's just the doggo (but in the future will include the other shep).
+-}
+calculateSheepVelocity : Doggo -> Sheep -> V2
+calculateSheepVelocity doggo shep =
     repel doggo shep
         |> V2.scale (100 / shep.mass)
         |> V2.maxNorm maxSheepVelocity
@@ -249,13 +287,13 @@ init =
         }
     , borks = Dict.Any.empty P2.asTuple
     , sheep =
-        [ Sheep (P2 50 -150) (V2 4 8) 0.5
-        , Sheep (P2 -100 50) (V2 0.1 0.1) 1
-        , Sheep (P2 200 -50) (V2 3 8) 0.7
-        , Sheep (P2 100 -50) (V2 2 -5) 2
-        , Sheep (P2 -50 100) (V2 1 2) 0.4
-        , Sheep (P2 -100 -50) (V2 0 2) 0.8
-        , Sheep (P2 0 -100) (V2 1 0) 1.2
+        [ Sheep (P2 50 -150) (V2 4 8) 0.5 1 Flocking
+        , Sheep (P2 -100 50) (V2 0 0) 1 1 Flocking
+        , Sheep (P2 200 -50) (V2 0 0) 0.7 1 Flocking
+        , Sheep (P2 100 -50) (V2 0 0) 2 1 Flocking
+        , Sheep (P2 -50 100) (V2 0 0) 0.4 1 Flocking
+        , Sheep (P2 -100 -50) (V2 0 0) 0.8 1 Flocking
+        , Sheep (P2 0 -100) (V2 0 0) 1.2 1 Flocking
         ]
     , windowSize = WindowSize 0 0
     , totalFrames = 0
@@ -271,16 +309,16 @@ update msg model =
     case msg of
         Frame frames ->
             let
-                sheep1 =
-                    updateSheep frames model.doggo model.sheep
+                newFlock =
+                    updateFlock frames model.doggo model.sheep
 
-                doggo1 =
+                newDoggo =
                     moveDoggo frames model.doggo
             in
             noCmd
                 { model
-                    | doggo = moveDoggo frames model.doggo
-                    , sheep = sheep1
+                    | doggo = newDoggo
+                    , sheep = newFlock
                     , totalFrames = model.totalFrames + frames
                     , borks = stepBorks frames model.borks
                 }
@@ -407,6 +445,10 @@ viewSheep : Sheep -> Collage Msg
 viewSheep sheep =
     group
         [ rectangle
+            4
+            4
+            |> filled (uniform (sheepColor sheep))
+        , rectangle
             36
             24
             |> filled (uniform (rgb 220 220 220))
@@ -419,6 +461,19 @@ viewSheep sheep =
         |> scale sheep.mass
         |> rotate (Radians.unwrap (V2.toRadians sheep.vel))
         |> shift ( P2.x sheep.pos, P2.y sheep.pos )
+
+
+sheepColor : Sheep -> Color
+sheepColor sheep =
+    case sheep.state of
+        Flocking ->
+            rgb 255 0 0
+
+        Grazing ->
+            rgb 0 255 0
+
+        Sleeping ->
+            rgb 0 0 255
 
 
 viewDoggo : Doggo -> Float -> Collage Msg
@@ -497,3 +552,8 @@ sheepTurnRate =
 sheepAwarenessRadius : Float
 sheepAwarenessRadius =
     100
+
+
+foodLossRate : Float
+foodLossRate =
+    0.002
