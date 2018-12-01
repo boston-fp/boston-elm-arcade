@@ -274,14 +274,10 @@ viewSheep : Sheep -> Collage Msg
 viewSheep sheep =
     group
         [ rectangle
-            -- body
             36
             24
             |> filled (uniform (rgb 220 220 220))
-
-        -- |> shift ( sheep.pos.x, sheep.pos.y )
         , rectangle
-            -- head
             8
             8
             |> filled (uniform (rgb 20 20 20))
@@ -294,30 +290,34 @@ viewSheep sheep =
 
 viewDoggo : Doggo -> Collage Msg
 viewDoggo doggo =
-    group
-        [ rectangle
-            -- body
-            36
-            20
-            |> filled (uniform (rgb 148 80 0))
-        , group
-            -- head
-            [ rectangle
-                14
-                12
+    let
+        body =
+            rectangle
+                36
+                20
                 |> filled (uniform (rgb 148 80 0))
-            , rectangle
-                8
-                16
-                |> filled (uniform (rgb 128 60 0))
-            ]
-            |> shift ( 24, 0 )
-        , rectangle
-            24
-            4
-            |> filled (uniform (rgb 148 80 0))
-            |> shift ( -20, 0 )
-        ]
+
+        head =
+            group
+                [ rectangle
+                    14
+                    12
+                    |> filled (uniform (rgb 148 80 0))
+                , rectangle
+                    8
+                    16
+                    |> filled (uniform (rgb 128 60 0))
+                ]
+                |> shift ( 24, 0 )
+
+        tail =
+            rectangle
+                24
+                4
+                |> filled (uniform (rgb 148 80 0))
+                |> shift ( -10, 0 )
+    in
+    group [ body |> at left tail, head ]
         |> rotate (radians <| Radians.unwrap doggo.angle)
         |> shift ( P2.x doggo.pos, P2.y doggo.pos )
 
