@@ -73,7 +73,7 @@ proportional to the inverse square of the distance bewteen 'p' and 'q'.
         ↗    <-- returned vector
       q
 
-   p
+p
 
 -}
 repel : { r | pos : P2 } -> { s | pos : P2 } -> V2
@@ -98,15 +98,17 @@ doggoVel doggo =
             V2.fromRadians doggo.angle
 
         multiplier =
-            case bearingDoggo doggo of
-                Forward ->
-                    1
+            16
+                * (case bearingDoggo doggo of
+                    Forward ->
+                        1
 
-                Halt ->
-                    0
+                    Halt ->
+                        0
 
-                Back ->
-                    -1
+                    Back ->
+                        -1
+                  )
     in
     V2.scale multiplier vec
 
@@ -223,7 +225,7 @@ moveDoggo : Float -> Doggo -> Doggo
 moveDoggo frames doggo =
     let
         turntRate =
-            Basics.pi / 100
+            Basics.pi / 50
 
         angleDt : Radians
         angleDt =
@@ -232,10 +234,10 @@ moveDoggo frames doggo =
                     * frames
                     * (case ( doggo.left, doggo.right ) of
                         ( True, False ) ->
-                            -1
+                            1
 
                         ( False, True ) ->
-                            1
+                            -1
 
                         _ ->
                             0
@@ -331,7 +333,7 @@ viewDoggo doggo =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ Browser.Events.onAnimationFrameDelta (\s -> Frame (s * 3/50))
+        [ Browser.Events.onAnimationFrameDelta (\s -> Frame (s * 3 / 50))
         , Browser.Events.onKeyDown (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
         , Browser.Events.onKeyUp (Json.Decode.map (KeyEvent << KeyUp) Key.decoder)
         , Browser.Events.onResize (\w h -> WindowResized (WindowSize w h))
@@ -347,7 +349,11 @@ main =
         , subscriptions = subscriptions
         }
 
+
+
 -- Constants
 
+
 maxSheepVelocity : Float
-maxSheepVelocity = 1
+maxSheepVelocity =
+    1
