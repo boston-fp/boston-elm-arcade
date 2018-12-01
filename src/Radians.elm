@@ -41,7 +41,7 @@ signum (Radians r) =
         1
 
     else
-        0
+        -1
 
 
 mult : Radians -> Radians -> Radians

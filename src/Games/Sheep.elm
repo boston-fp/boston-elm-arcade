@@ -139,7 +139,11 @@ updateSheep frames doggo =
                             (Radians (Radians.signum angleToHerdVelocity))
                             angle
             in
-            { sheep | vel = V2.rotate angleToRotate sheep.vel }
+            { sheep
+                | vel = V2.rotate angleToRotate sheep.vel
+                          |> V2.maxNorm maxSheepVelocity
+                , pos = integratePos frames sheep
+            }
         )
 
 
@@ -246,12 +250,12 @@ init =
     , borks = Dict.Any.empty P2.asTuple
     , sheep =
         [ Sheep (P2 50 -150) (V2 4 8) 0.5
-        , Sheep (P2 -100 50) (V2 0 0) 1
-        , Sheep (P2 200 -50) (V2 0 0) 0.7
-        , Sheep (P2 100 -50) (V2 0 0) 2
-        , Sheep (P2 -50 100) (V2 0 0) 0.4
-        , Sheep (P2 -100 -50) (V2 0 0) 0.8
-        , Sheep (P2 0 -100) (V2 0 0) 1.2
+        , Sheep (P2 -100 50) (V2 0.1 0.1) 1
+        , Sheep (P2 200 -50) (V2 3 8) 0.7
+        , Sheep (P2 100 -50) (V2 2 -5) 2
+        , Sheep (P2 -50 100) (V2 1 2) 0.4
+        , Sheep (P2 -100 -50) (V2 0 2) 0.8
+        , Sheep (P2 0 -100) (V2 1 0) 1.2
         ]
     , windowSize = WindowSize 0 0
     , totalFrames = 0
@@ -492,4 +496,4 @@ sheepTurnRate =
 
 sheepAwarenessRadius : Float
 sheepAwarenessRadius =
-    40
+    100
