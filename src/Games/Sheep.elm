@@ -173,11 +173,11 @@ update msg model =
             ( { model | windowSize = size }, Cmd.none )
 
         KeyEvent e ->
-            noCmd { model | doggo = pointDoggo e model.doggo }
+            noCmd { model | doggo = setKey e model.doggo }
 
 
-pointDoggo : Key.Event -> Doggo -> Doggo
-pointDoggo e doggo =
+setKey : Key.Event -> Doggo -> Doggo
+setKey e doggo =
     case e of
         KeyUp Key.Left ->
             { doggo | left = False }
