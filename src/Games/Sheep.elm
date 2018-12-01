@@ -215,12 +215,6 @@ setKey e doggo =
             doggo
 
 
-
--- case ( e, doggo.bearing ) of
---     ( KeyDown Key.Up, _ ) ->
---         { doggo | bearing = Forward }
-
-
 moveDoggo : Float -> Doggo -> Doggo
 moveDoggo frames doggo =
     let
