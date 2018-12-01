@@ -1,6 +1,10 @@
-module Key exposing (Key(..), KeyType, decoder)
+module Key exposing (Event, Key(..), KeyType(..), decoder)
 
 import Json.Decode as Decode
+
+
+type alias Event =
+    KeyType
 
 
 type KeyType
@@ -22,6 +26,8 @@ decoder =
     Decode.map fromStr (Decode.field "key" Decode.string)
 
 
+{-| TODO maybe String -> Result String Key
+-}
 fromStr : String -> Key
 fromStr string =
     case string of

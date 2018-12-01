@@ -10,6 +10,7 @@ import Games.Chansey as Chansey
 import Games.Platformer.Model as PlatformerModel
 import Games.Platformer.Update as PlatformerUpdate
 import Games.Platformer.View as PlatformerView
+import Games.Sheep as Sheep
 import Games.Snake.Model as SnakeModel
 import Games.Snake.Update as SnakeUpdate
 import Games.Snake.View as SnakeView
@@ -25,6 +26,7 @@ type Game
     = Snake
     | Chansey
     | Platformer
+    | Sheep
 
 
 type GameState
@@ -32,6 +34,7 @@ type GameState
     | PlayingSnake SnakeModel.Model
     | PlayingChansey Chansey.Model
     | PlayingPlatformer PlatformerModel.Model
+    | PlayingSheep Sheep.Model
 
 
 gameStateParser : Parser (GameState -> a) a
@@ -44,6 +47,8 @@ gameStateParser =
             (s <| String.toLower <| gameName Chansey)
         , Url.Parser.map (PlayingPlatformer PlatformerModel.init)
             (s <| String.toLower <| gameName Platformer)
+        , Url.Parser.map (PlayingSheep Sheep.init)
+            (s <| String.toLower <| gameName Sheep)
         ]
 
 
@@ -59,10 +64,13 @@ gameName game =
         Platformer ->
             "Platformer"
 
+        Sheep ->
+            "Sheep"
+
 
 games : List Game
 games =
-    [ Snake, Chansey, Platformer ]
+    [ Snake, Chansey, Platformer, Sheep ]
 
 
 type alias Model =
@@ -85,6 +93,7 @@ type Msg
     = SnakeMsg SnakeUpdate.Msg
     | ChanseyMsg Chansey.Msg
     | PlatformerMsg PlatformerUpdate.Msg
+    | SheepMsg Sheep.Msg
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
 
@@ -138,6 +147,15 @@ update msg model =
                 PlayingPlatformer platformerModel ->
                     ( PlatformerUpdate.update platformerMsg platformerModel, Cmd.none )
                         |> updateWith PlayingPlatformer PlatformerMsg model
+
+                _ ->
+                    ( model, Cmd.none )
+
+        SheepMsg sheepMsg ->
+            case model.gameState of
+                PlayingSheep sheepModel ->
+                    Sheep.update sheepMsg sheepModel
+                        |> updateWith PlayingSheep SheepMsg model
 
                 _ ->
                     ( model, Cmd.none )
@@ -219,6 +237,11 @@ view model =
                 (formatTitle (gameName Platformer))
                 [ Html.map PlatformerMsg (PlatformerView.view platformerModel) ]
 
+        PlayingSheep sheepModel ->
+            Browser.Document
+                (formatTitle (gameName Sheep))
+                [ Html.map SheepMsg (Sheep.view sheepModel) ]
+
 
 
 ---- PROGRAM ----
@@ -230,9 +253,10 @@ subscriptions model =
     -- https://github.com/elm/compiler/issues/1776
     -- is resolved
     Sub.batch
-        [ SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg
-        , Chansey.subscriptions Chansey.init |> Sub.map ChanseyMsg
-        , PlatformerUpdate.subs PlatformerModel.init |> Sub.map PlatformerMsg
+        [ -- SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg
+          -- , Chansey.subscriptions Chansey.init |> Sub.map ChanseyMsg
+          -- , PlatformerUpdate.subs PlatformerModel.init |> Sub.map PlatformerMsg
+          Sheep.subscriptions Sheep.init |> Sub.map SheepMsg
         ]
 
 
