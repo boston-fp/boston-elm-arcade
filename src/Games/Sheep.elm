@@ -1,4 +1,4 @@
-module Games.Sheep exposing (Doggo, Model, Msg(..), Sheep, init, integratePos, main, subscriptions, update, view)
+module Games.Sheep exposing (Doggo, Model, Msg(..), init, integratePos, main, subscriptions, update, view)
 
 import Browser
 import Browser.Events
@@ -8,6 +8,7 @@ import Collage.Render as Render exposing (svg)
 import Collage.Text as Text exposing (..)
 import Color exposing (Color, rgb)
 import Dict.Any exposing (AnyDict)
+import Games.Sheep.Sheep as Sheep exposing (Sheep)
 import Html exposing (Html)
 import Html.Attributes as Hattr
 import Json.Decode
@@ -82,21 +83,6 @@ stepBorks frames borks =
         |> Dict.Any.filter (\_ bork -> bork.framesLeft > 0)
 
 
-type alias Sheep =
-    { pos : P2
-    , vel : V2
-    , mass : Float
-    , food : Float
-    , state : SheepState
-    }
-
-
-type SheepState
-    = Flocking
-    | Grazing
-    | Sleeping
-
-
 integratePos : Float -> { r | pos : P2, vel : V2 } -> P2
 integratePos frames entity =
     P2.add entity.pos (V2.scale frames entity.vel)
@@ -110,94 +96,8 @@ updateFlock frames doggo =
                 ( herd1, sheep, herd2 ) =
                     SelectList.toTuple flock
             in
-            updateSheep frames (herd1 ++ herd2) sheep
+            Sheep.update frames (herd1 ++ herd2) sheep
         )
-
-
-updateSheep : Float -> List Sheep -> Sheep -> Sheep
-updateSheep frames flock sheep =
-    case sheep.state of
-        Flocking ->
-            updateFlockingSheep frames flock sheep
-
-        Grazing ->
-            updateGrazingSheep frames flock sheep
-
-        Sleeping ->
-            updateSleepingSheep frames flock sheep
-
-
-updateFlockingSheep : Float -> List Sheep -> Sheep -> Sheep
-updateFlockingSheep frames flock sheep =
-    let
-        -- The herd within the sheep's awareness.
-        nearbyHerd : List Sheep
-        nearbyHerd =
-            List.filter
-                (\nearbySheep ->
-                    P2.distanceBetween sheep.pos nearbySheep.pos
-                        <= sheepAwarenessRadius
-                )
-                flock
-
-        herdVelocity : V2
-        herdVelocity =
-            List.foldl
-                (.vel >> V2.add)
-                V2.zero
-                nearbyHerd
-
-        angleToHerdVelocity : Radians
-        angleToHerdVelocity =
-            V2.angleBetween sheep.vel herdVelocity
-
-        angleToRotate : Radians
-        angleToRotate =
-            let
-                angle =
-                    Radians.mult (Radians frames) sheepTurnRate
-            in
-            -- Avoid over-rotation: if the sheep can rotate to become
-            -- parallel with the flock this frame, then do so
-            if Radians.gte angle (Radians.abs angleToHerdVelocity) then
-                angleToHerdVelocity
-
-            else
-                Radians.mult
-                    (Radians (Radians.signum angleToHerdVelocity))
-                    angle
-    in
-    { sheep
-        | vel =
-            V2.rotate angleToRotate sheep.vel
-                |> V2.maxNorm maxSheepVelocity
-        , pos = integratePos frames sheep
-        , food = sheep.food - (foodLossRate * frames)
-    }
-
-
-updateGrazingSheep : Float -> List Sheep -> Sheep -> Sheep
-updateGrazingSheep frames flock sheep =
-    if sheep.food > 1 then
-        { sheep | state = Flocking }
-
-    else
-        { sheep | food = sheep.food + frames * foodGainRate }
-
-
-updateSleepingSheep : Float -> List Sheep -> Sheep -> Sheep
-updateSleepingSheep frames flock sheep =
-    sheep
-
-
-{-| Calculate a sheep's velocity, as a pure of inputs. Currently,
-that's just the doggo (but in the future will include the other shep).
--}
-calculateSheepVelocity : Doggo -> Sheep -> V2
-calculateSheepVelocity doggo shep =
-    repel doggo shep
-        |> V2.scale (100 / shep.mass)
-        |> V2.maxNorm maxSheepVelocity
 
 
 
@@ -295,13 +195,13 @@ init =
         }
     , borks = Dict.Any.empty P2.asTuple
     , sheep =
-        [ Sheep (P2 50 -150) (V2 4 8) 0.5 1 Flocking
-        , Sheep (P2 -100 50) (V2 0 0) 1 1 Flocking
-        , Sheep (P2 200 -50) (V2 0 0) 0.7 1 Flocking
-        , Sheep (P2 100 -50) (V2 0 0) 2 1 Flocking
-        , Sheep (P2 -50 100) (V2 0 0) 0.4 1 Flocking
-        , Sheep (P2 -100 -50) (V2 0 0) 0.8 1 Flocking
-        , Sheep (P2 0 -100) (V2 0 0) 1.2 1 Flocking
+        [ Sheep (P2 50 -150) (V2 4 8) 0.5 1 Sheep.Flocking
+        , Sheep (P2 -100 50) (V2 0 0) 1 1 Sheep.Flocking
+        , Sheep (P2 200 -50) (V2 0 0) 0.7 1 Sheep.Flocking
+        , Sheep (P2 100 -50) (V2 0 0) 2 1 Sheep.Flocking
+        , Sheep (P2 -50 100) (V2 0 0) 0.4 1 Sheep.Flocking
+        , Sheep (P2 -100 -50) (V2 0 0) 0.8 1 Sheep.Flocking
+        , Sheep (P2 0 -100) (V2 0 0) 1.2 1 Sheep.Flocking
         ]
     , windowSize = WindowSize 0 0
     , totalFrames = 0
@@ -430,7 +330,7 @@ view model =
             group <|
                 viewBorks model.borks
                     :: viewDoggo model.doggo model.totalFrames
-                    :: List.map viewSheep model.sheep
+                    :: List.map Sheep.view model.sheep
 
         -- , Html.text (Debug.toString model)
         ]
@@ -447,41 +347,6 @@ viewBorks borks =
                     |> scale bork.framesLeft
             )
         |> group
-
-
-viewSheep : Sheep -> Collage Msg
-viewSheep sheep =
-    group
-        [ rectangle
-            4
-            4
-            |> filled (uniform (sheepColor sheep))
-        , rectangle
-            36
-            24
-            |> filled (uniform (rgb 220 220 220))
-        , rectangle
-            8
-            8
-            |> filled (uniform (rgb 20 20 20))
-            |> shift ( 20, 0 )
-        ]
-        |> scale sheep.mass
-        |> rotate (Radians.unwrap (V2.toRadians sheep.vel))
-        |> shift ( P2.x sheep.pos, P2.y sheep.pos )
-
-
-sheepColor : Sheep -> Color
-sheepColor sheep =
-    case sheep.state of
-        Flocking ->
-            rgb 255 0 0
-
-        Grazing ->
-            rgb 0 255 0
-
-        Sleeping ->
-            rgb 0 0 255
 
 
 viewDoggo : Doggo -> Float -> Collage Msg
@@ -537,36 +402,3 @@ main =
         , update = update
         , subscriptions = subscriptions
         }
-
-
-
--- Constants
-
-
-{-| Velocity per frame
--}
-maxSheepVelocity : Float
-maxSheepVelocity =
-    1
-
-
-{-| Radians per frame
--}
-sheepTurnRate : Radians
-sheepTurnRate =
-    Radians 0.01
-
-
-sheepAwarenessRadius : Float
-sheepAwarenessRadius =
-    100
-
-
-foodLossRate : Float
-foodLossRate =
-    0.002
-
-
-foodGainRate : Float
-foodGainRate =
-    0.02
