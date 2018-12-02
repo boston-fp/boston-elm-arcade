@@ -205,7 +205,7 @@ init =
         , angle = 0
         }
     , borks = Dict.Any.empty P2.asTuple
-    , sheep = randomFlock 10 (Random.initialSeed 0)
+    , sheep = randomFlock 100 (Random.initialSeed 0)
     , windowSize = WindowSize 0 0
     , totalFrames = 0
     }

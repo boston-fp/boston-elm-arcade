@@ -38,13 +38,24 @@ update frames doggo flock sheep =
 updateFlocking : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
 updateFlocking frames doggo flock sheep =
     let
-        -- The flock within the sheep's awareness.
-        nearbyFlock : List Sheep
+        -- The flock within the sheep's awareness, paired with the vector to
+        -- each sheep, and its norm.
+        nearbyFlock : List ( Sheep, V2, Float )
         nearbyFlock =
-            List.filter
+            List.filterMap
                 (\nearbySheep ->
-                    P2.distanceBetween sheep.pos nearbySheep.pos
-                        <= gAwarenessRadius
+                    let
+                        vec =
+                            P2.diff nearbySheep.pos sheep.pos
+
+                        norm =
+                            V2.norm vec
+                    in
+                    if norm <= gAwarenessRadius then
+                        Just ( nearbySheep, vec, norm )
+
+                    else
+                        Nothing
                 )
                 flock
 
@@ -52,14 +63,47 @@ updateFlocking frames doggo flock sheep =
         flockVelocity : V2
         flockVelocity =
             nearbyFlock
-                |> List.foldl (.vel >> V2.add) V2.zero
+                |> List.map (\( nearbySheep, _, _ ) -> nearbySheep.vel)
+                |> V2.sum
                 |> V2.scale (1 / toFloat (List.length flock))
 
+        -- The force the flock has on a sheep. It's a bit tricky, not every
+        -- nearby sheep necessarily has a force on the current one.
+        --
+        -- * A sheep is considered "content" if, of the sheep it is aware of
+        --   (in its "awareness radius"), at least two of them is in its
+        --   "comfort zone" (even if that sheep is too close for comfort, i.e.
+        --   in its "personal space").
+        --
+        -- * If a sheep is "content", then it feels part of a flock, and is not
+        --   explicitly attracted to any nearby sheep. However, it is still
+        --   repelled by sheep in its "personal space"
+        --
+        -- * Otherwise, if a sheep is not "content", then it is attracted to any
+        --   sheep it is aware of (since, per the above logic, they all must be
+        --   within its "awareness radius" but outside its "personal space").
+        --
+        -- This logic keeps a flock of sheep from being pulled towards the
+        -- center. Sheep on the edge of a flock feel just as a part of it as
+        -- sheep in the center.
         flockForce : V2
         flockForce =
-            nearbyFlock
-                |> List.map (sheepForce sheep)
-                |> V2.sum
+            let
+                ( veryNearbyFlock, fringeFlock ) =
+                    List.partition
+                      (\( _, _, norm ) -> norm <= gComfortZoneRadius)
+                      nearbyFlock
+            in
+            if List.length veryNearbyFlock < 2 then
+                nearbyFlock
+                    |> List.map (sheepForce sheep)
+                    |> V2.sum
+
+            else
+                veryNearbyFlock
+                    |> List.filter (\( _, _, norm ) -> norm <= gPersonalSpaceRadius)
+                    |> List.map (sheepForce sheep)
+                    |> V2.sum
 
         doggoForce : V2
         doggoForce =
@@ -71,7 +115,7 @@ updateFlocking frames doggo flock sheep =
                     V2.norm diff
             in
             if norm <= gAwarenessRadius then
-                V2.scale (5*gForce) (V2.negate (V2.signorm diff))
+                V2.scale gDoggoRepelForce (V2.negate (V2.signorm diff))
 
             else
                 V2.zero
@@ -80,12 +124,12 @@ updateFlocking frames doggo flock sheep =
         | vel =
             -- New sheep's base velocity is calculated as:
             --
-            --   * 40% its previous velocity
-            --   * 60% the nearby flock's velocity
+            --   * 60% its previous velocity
+            --   * 40% the nearby flock's velocity (hive mind)
             --
             -- Then, the flock's and doggo's forces are applied, and the
             -- velocity is clamped.
-            V2.lerp 0.4 sheep.vel flockVelocity
+            V2.lerp 0.6 sheep.vel flockVelocity
                 |> V2.add flockForce
                 |> V2.add doggoForce
                 |> V2.minNorm gMinVelocity
@@ -98,27 +142,16 @@ updateFlocking frames doggo flock sheep =
 {-| Calculate the force one sheep has on another:
 
     * If the sheep are within the "personal space", they repel
-    * If the sheep are within the "comfort zone", no force
     * Otherwise, they attract (constant force)
 
 -}
-sheepForce : Sheep -> Sheep -> V2
-sheepForce sheep otherSheep =
-    let
-        diff =
-            P2.diff otherSheep.pos sheep.pos
-
-        norm =
-            V2.norm diff
-    in
+sheepForce : Sheep -> ( Sheep, V2, Float ) -> V2
+sheepForce sheep ( otherSheep, diff, norm ) =
     if norm <= gPersonalSpaceRadius then
-        V2.scale gForce (V2.negate (V2.signorm diff))
-
-    else if norm <= gComfortZoneRadius then
-        V2.zero
+        V2.scale gSheepRepelForce (V2.negate (V2.signorm diff))
 
     else
-        V2.scale gForce (V2.signorm diff)
+        V2.scale gSheepAttractForce (V2.signorm diff)
 
 
 updateGrazing : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
@@ -202,12 +235,12 @@ view sheep =
 -}
 gMaxVelocity : Float
 gMaxVelocity =
-    5
+    1
 
 
 gMinVelocity : Float
 gMinVelocity =
-    1
+    0.5
 
 
 {-| Radians per frame
@@ -231,16 +264,31 @@ gComfortZoneRadius =
     300
 
 
-gForce : Float
-gForce =
-    0.1
-
-
 {-| Sheep inside each others' personal space repel each other.
 -}
 gPersonalSpaceRadius : Float
 gPersonalSpaceRadius =
-    100
+    40
+
+
+gMaxFlockForce : Float
+gMaxFlockForce =
+    0.1
+
+
+gSheepAttractForce : Float
+gSheepAttractForce =
+    0.01
+
+
+gSheepRepelForce : Float
+gSheepRepelForce =
+    gSheepAttractForce * 5
+
+
+gDoggoRepelForce : Float
+gDoggoRepelForce =
+    gSheepRepelForce * 50
 
 
 gFoodLossRate : Float
