@@ -71,7 +71,7 @@ updateFlocking frames doggo flock sheep =
                     V2.norm diff
             in
             if norm <= gAwarenessRadius then
-                V2.scale gForce (V2.negate (V2.signorm diff))
+                V2.scale (5*gForce) (V2.negate (V2.signorm diff))
 
             else
                 V2.zero

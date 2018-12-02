@@ -132,20 +132,17 @@ doggoVel doggo =
             V2.fromRadians doggo.angle
 
         magnitude =
-            10
-
-        sign =
             case bearingDoggo doggo of
                 Forward ->
-                    1
+                    10
 
                 Halt ->
-                    0
+                    5
 
                 Back ->
-                    -1
+                    -2
     in
-    V2.scale (magnitude * sign) vec
+    V2.scale magnitude vec
 
 
 bearingDoggo : Doggo -> Bearing
@@ -285,7 +282,15 @@ moveDoggo : Float -> Doggo -> Doggo
 moveDoggo frames doggo =
     let
         turntRate =
-            Basics.pi / 50
+            case bearingDoggo doggo of
+                Forward ->
+                    pi / 40
+
+                Halt ->
+                    pi / 30
+
+                Back ->
+                    pi / 60
 
         angleDt : Radians
         angleDt =
