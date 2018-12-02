@@ -72,6 +72,7 @@ updateFlocking frames flock sheep =
             -- is capped.
             V2.lerp 0.5 sheep.vel flockVelocity
                 |> V2.add flockForce
+                |> V2.minNorm gMinVelocity
                 |> V2.maxNorm gMaxVelocity
         , pos = P2.add sheep.pos (V2.scale frames sheep.vel)
         , food = sheep.food - (gFoodLossRate * frames)
@@ -185,6 +186,11 @@ view sheep =
 -}
 gMaxVelocity : Float
 gMaxVelocity =
+    5
+
+
+gMinVelocity : Float
+gMinVelocity =
     1
 
 
@@ -211,7 +217,7 @@ gComfortZoneRadius =
 
 gForce : Float
 gForce =
-    0.5
+    0.1
 
 
 {-| Sheep inside each others' personal space repel each other.

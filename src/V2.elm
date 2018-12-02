@@ -1,4 +1,4 @@
-module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, negate, norm, overX, overY, pow, project, quadrance, rotate, scale, signorm, sum, toDegrees, toRadians, x, y, zero)
+module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, minNorm, negate, norm, overX, overY, pow, project, quadrance, rotate, scale, signorm, sum, toDegrees, toRadians, x, y, zero)
 
 import Radians exposing (Radians)
 
@@ -46,7 +46,7 @@ lerp a v w =
 
 
 {-| Scale a vector back if its norm is greater than the given value. (Useful to
-implement e.g. "maximum velocity").
+implement e.g. maximum velocity).
 -}
 maxNorm : Float -> V2 -> V2
 maxNorm n v =
@@ -55,6 +55,22 @@ maxNorm n v =
             quadrance v
     in
     if q > n * n then
+        scale (n / sqrt q) v
+
+    else
+        v
+
+
+{-| Scale a vector up if its norm is less than the given value. (Useful to
+implement e.g. minimum velocity).
+-}
+minNorm : Float -> V2 -> V2
+minNorm n v =
+    let
+        q =
+            quadrance v
+    in
+    if q < n * n then
         scale (n / sqrt q) v
 
     else
