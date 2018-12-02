@@ -110,12 +110,25 @@ updateFlock frames doggo =
                 ( herd1, sheep, herd2 ) =
                     SelectList.toTuple flock
             in
-            updateSheep (herd1 ++ herd2) frames sheep
+            updateSheep frames (herd1 ++ herd2) sheep
         )
 
 
-updateSheep : List Sheep -> Float -> Sheep -> Sheep
-updateSheep flock frames sheep =
+updateSheep : Float -> List Sheep -> Sheep -> Sheep
+updateSheep frames flock sheep =
+    case sheep.state of
+        Flocking ->
+            updateFlockingSheep frames flock sheep
+
+        Grazing ->
+            updateGrazingSheep frames flock sheep
+
+        Sleeping ->
+            updateSleepingSheep frames flock sheep
+
+
+updateFlockingSheep : Float -> List Sheep -> Sheep -> Sheep
+updateFlockingSheep frames flock sheep =
     let
         -- The herd within the sheep's awareness.
         nearbyHerd : List Sheep
@@ -153,33 +166,28 @@ updateSheep flock frames sheep =
                 Radians.mult
                     (Radians (Radians.signum angleToHerdVelocity))
                     angle
-
-        newSheep =
-            { sheep
-                | vel =
-                    V2.rotate angleToRotate sheep.vel
-                        |> V2.maxNorm maxSheepVelocity
-                , pos = integratePos frames sheep
-                , food = sheep.food - (foodLossRate * frames)
-            }
     in
-    case sheep.state of
-        Flocking ->
-            if sheep.food < 0.5 then
-                { newSheep | state = Grazing }
+    { sheep
+        | vel =
+            V2.rotate angleToRotate sheep.vel
+                |> V2.maxNorm maxSheepVelocity
+        , pos = integratePos frames sheep
+        , food = sheep.food - (foodLossRate * frames)
+    }
 
-            else
-                newSheep
 
-        Grazing ->
-            if sheep.food > 1 then
-                { newSheep | state = Flocking }
+updateGrazingSheep : Float -> List Sheep -> Sheep -> Sheep
+updateGrazingSheep frames flock sheep =
+    if sheep.food > 1 then
+        { sheep | state = Flocking }
 
-            else
-                newSheep
+    else
+        { sheep | food = sheep.food + frames * foodGainRate }
 
-        Sleeping ->
-            newSheep
+
+updateSleepingSheep : Float -> List Sheep -> Sheep -> Sheep
+updateSleepingSheep frames flock sheep =
+    sheep
 
 
 {-| Calculate a sheep's velocity, as a pure of inputs. Currently,
@@ -557,3 +565,8 @@ sheepAwarenessRadius =
 foodLossRate : Float
 foodLossRate =
     0.002
+
+
+foodGainRate : Float
+foodGainRate =
+    0.02
