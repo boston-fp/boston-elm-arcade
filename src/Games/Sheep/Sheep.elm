@@ -3,7 +3,7 @@ module Games.Sheep.Sheep exposing (Sheep, State(..), update, view)
 import Collage exposing (Collage)
 import Color exposing (Color)
 import P2 exposing (P2)
-import Radians exposing (Radians(..))
+import Radians exposing (Radians)
 import V2 exposing (V2)
 
 
@@ -63,17 +63,15 @@ updateFlocking frames flock sheep =
         angleToRotate =
             let
                 angle =
-                    Radians.mult (Radians frames) gTurnRate
+                    frames * gTurnRate
             in
             -- Avoid over-rotation: if the sheep can rotate to become
             -- parallel with the flock this frame, then do so
-            if Radians.gte angle (Radians.abs angleToHerdVelocity) then
+            if angle >= abs angleToHerdVelocity then
                 angleToHerdVelocity
 
             else
-                Radians.mult
-                    (Radians (Radians.signum angleToHerdVelocity))
-                    angle
+                Radians.signum angleToHerdVelocity * angle
     in
     { sheep
         | vel =
@@ -142,7 +140,7 @@ view sheep =
             |> Collage.shift ( 20, 0 )
         ]
         |> Collage.scale sheep.mass
-        |> Collage.rotate (Radians.unwrap (V2.toRadians sheep.vel))
+        |> Collage.rotate (V2.toRadians sheep.vel)
         |> Collage.shift ( P2.x sheep.pos, P2.y sheep.pos )
 
 
@@ -163,7 +161,7 @@ gMaxVelocity =
 -}
 gTurnRate : Radians
 gTurnRate =
-    Radians 0.01
+    0.01
 
 
 gAwarenessRadius : Float

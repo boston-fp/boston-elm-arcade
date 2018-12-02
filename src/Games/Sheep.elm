@@ -14,7 +14,7 @@ import Html.Attributes as Hattr
 import Json.Decode
 import Key exposing (Key(..), KeyType(..))
 import P2 exposing (P2(..))
-import Radians exposing (Radians(..))
+import Radians exposing (Radians)
 import SelectList exposing (SelectList)
 import V2 exposing (V2(..))
 
@@ -191,7 +191,7 @@ init =
         , down = False
         , left = False
         , right = False
-        , angle = Radians 0
+        , angle = 0
         }
     , borks = Dict.Any.empty P2.asTuple
     , sheep =
@@ -283,19 +283,18 @@ moveDoggo frames doggo =
 
         angleDt : Radians
         angleDt =
-            Radians <|
-                turntRate
-                    * frames
-                    * (case ( doggo.left, doggo.right ) of
-                        ( True, False ) ->
-                            1
+            turntRate
+                * frames
+                * (case ( doggo.left, doggo.right ) of
+                    ( True, False ) ->
+                        1
 
-                        ( False, True ) ->
-                            -1
+                    ( False, True ) ->
+                        -1
 
-                        _ ->
-                            0
-                      )
+                    _ ->
+                        0
+                  )
 
         newPos : P2
         newPos =
@@ -304,7 +303,7 @@ moveDoggo frames doggo =
                 , vel = doggoVel doggo
                 }
     in
-    { doggo | pos = newPos, angle = Radians.add doggo.angle angleDt }
+    { doggo | pos = newPos, angle = doggo.angle + angleDt }
 
 
 view : Model -> Html Msg
@@ -380,7 +379,7 @@ viewDoggo doggo frames =
                 |> rotate (sin (frames / (pi * 4)) / 4)
     in
     group [ body, tail, head ]
-        |> rotate (radians <| Radians.unwrap doggo.angle)
+        |> rotate (radians doggo.angle)
         |> shift ( P2.x doggo.pos, P2.y doggo.pos )
 
 

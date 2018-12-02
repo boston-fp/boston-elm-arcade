@@ -1,42 +1,17 @@
-module Radians exposing
-    ( Radians(..)
-    , abs
-    , add
-    , fromDegrees
-    , gte
-    , mult
-    , signum
-    , toDegrees
-    , unwrap
-    )
+module Radians exposing (..)
 
 
-type Radians
-    = Radians Float
-
-
-abs : Radians -> Radians
-abs (Radians r) =
-    Radians (Basics.abs r)
-
-
-add : Radians -> Radians -> Radians
-add (Radians r1) (Radians r2) =
-    Radians (r1 + r2)
+type alias Radians
+    = Float
 
 
 fromDegrees : Float -> Radians
 fromDegrees =
-    degrees >> Radians
-
-
-gte : Radians -> Radians -> Bool
-gte (Radians r) (Radians s) =
-    r >= s
+    degrees
 
 
 signum : Radians -> Float
-signum (Radians r) =
+signum r =
     if r >= 0 then
         1
 
@@ -44,16 +19,6 @@ signum (Radians r) =
         -1
 
 
-mult : Radians -> Radians -> Radians
-mult (Radians r1) (Radians r2) =
-    Radians (r1 * r2)
-
-
 toDegrees : Radians -> Float
-toDegrees (Radians r) =
+toDegrees r =
     r * 180 / pi
-
-
-unwrap : Radians -> Float
-unwrap (Radians r) =
-    r

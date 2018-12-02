@@ -1,6 +1,6 @@
 module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, negate, norm, overX, overY, project, quadrance, rotate, scale, signorm, toDegrees, toRadians, x, y, zero)
 
-import Radians exposing (Radians(..))
+import Radians exposing (Radians)
 
 
 type V2
@@ -17,7 +17,7 @@ parallel to 'w'.
 -}
 angleBetween : V2 -> V2 -> Radians
 angleBetween (V2 vx vy) (V2 wx wy) =
-    Radians (atan2 wy wx - atan2 vy vx)
+    atan2 wy wx - atan2 vy vx
 
 
 diff : V2 -> V2 -> V2
@@ -36,7 +36,7 @@ fromDegrees =
 
 
 fromRadians : Radians -> V2
-fromRadians (Radians r) =
+fromRadians r =
     V2 (cos r) (sin r)
 
 
@@ -100,7 +100,7 @@ quadrance v =
 {-| Rotate a vector.
 -}
 rotate : Radians -> V2 -> V2
-rotate (Radians r) (V2 vx vy) =
+rotate r (V2 vx vy) =
     let
         c =
             cos r
@@ -130,7 +130,7 @@ toDegrees =
 
 toRadians : V2 -> Radians
 toRadians (V2 vx vy) =
-    Radians (atan2 vy vx)
+    atan2 vy vx
 
 
 x : V2 -> Float
