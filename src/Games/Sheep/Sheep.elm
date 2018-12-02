@@ -22,21 +22,21 @@ type State
     | Sleeping
 
 
-update : Float -> List Sheep -> Sheep -> Sheep
-update frames flock sheep =
+update : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
+update frames doggo flock sheep =
     case sheep.state of
         Flocking ->
-            updateFlocking frames flock sheep
+            updateFlocking frames doggo flock sheep
 
         Grazing ->
-            updateGrazing frames flock sheep
+            updateGrazing frames doggo flock sheep
 
         Sleeping ->
-            updateSleeping frames flock sheep
+            updateSleeping frames doggo flock sheep
 
 
-updateFlocking : Float -> List Sheep -> Sheep -> Sheep
-updateFlocking frames flock sheep =
+updateFlocking : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
+updateFlocking frames doggo flock sheep =
     let
         -- The flock within the sheep's awareness.
         nearbyFlock : List Sheep
@@ -60,18 +60,34 @@ updateFlocking frames flock sheep =
             nearbyFlock
                 |> List.map (sheepForce sheep)
                 |> V2.sum
+
+        doggoForce : V2
+        doggoForce =
+            let
+                diff =
+                    P2.diff doggo.pos sheep.pos
+
+                norm =
+                    V2.norm diff
+            in
+            if norm <= gAwarenessRadius then
+                V2.scale gForce (V2.negate (V2.signorm diff))
+
+            else
+                V2.zero
     in
     { sheep
         | vel =
-            -- New sheep's velocity is calculated as:
+            -- New sheep's base velocity is calculated as:
             --
-            --   * 50% its previous velocity
-            --   * 50% the flock's (average) velocity
+            --   * 40% its previous velocity
+            --   * 60% the nearby flock's velocity
             --
-            -- Then, the flock's individual forces are applied, and the velocity
-            -- is capped.
-            V2.lerp 0.5 sheep.vel flockVelocity
+            -- Then, the flock's and doggo's forces are applied, and the
+            -- velocity is clamped.
+            V2.lerp 0.4 sheep.vel flockVelocity
                 |> V2.add flockForce
+                |> V2.add doggoForce
                 |> V2.minNorm gMinVelocity
                 |> V2.maxNorm gMaxVelocity
         , pos = P2.add sheep.pos (V2.scale frames sheep.vel)
@@ -105,8 +121,8 @@ sheepForce sheep otherSheep =
         V2.scale gForce (V2.signorm diff)
 
 
-updateGrazing : Float -> List Sheep -> Sheep -> Sheep
-updateGrazing frames flock sheep =
+updateGrazing : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
+updateGrazing frames doggo flock sheep =
     if sheep.food > 1 then
         { sheep | state = Flocking }
 
@@ -114,8 +130,8 @@ updateGrazing frames flock sheep =
         { sheep | food = sheep.food + frames * gFoodGainRate }
 
 
-updateSleeping : Float -> List Sheep -> Sheep -> Sheep
-updateSleeping frames flock sheep =
+updateSleeping : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
+updateSleeping frames doggo flock sheep =
     sheep
 
 

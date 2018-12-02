@@ -97,7 +97,7 @@ updateFlock frames doggo =
                 ( herd1, sheep, herd2 ) =
                     SelectList.toTuple flock
             in
-            Sheep.update frames (herd1 ++ herd2) sheep
+            Sheep.update frames doggo (herd1 ++ herd2) sheep
         )
 
 
@@ -183,7 +183,7 @@ init =
                     Random.step (Random.float -4 4) seed3
 
                 ( m, seed5 ) =
-                    Random.step (Random.float 1 2) seed4
+                    Random.step (Random.float 1 1.1) seed4
             in
             ( Sheep (P2 px py) (V2 vx vy) m 1 Sheep.Flocking, seed5 )
 
