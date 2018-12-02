@@ -4,6 +4,7 @@ import Collage exposing (Collage)
 import Color exposing (Color)
 import P2 exposing (P2)
 import Radians exposing (Radians)
+import Random
 import V2 exposing (V2)
 
 
@@ -22,11 +23,11 @@ type State
     | Sleeping
 
 
-update : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
-update frames doggo flock sheep =
+update : Random.Seed -> Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
+update seed frames doggo flock sheep =
     case sheep.state of
         Flocking ->
-            updateFlocking frames doggo flock sheep
+            updateFlocking seed frames doggo flock sheep
 
         Grazing ->
             updateGrazing frames doggo flock sheep
@@ -35,8 +36,8 @@ update frames doggo flock sheep =
             updateSleeping frames doggo flock sheep
 
 
-updateFlocking : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
-updateFlocking frames doggo flock sheep =
+updateFlocking : Random.Seed -> Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
+updateFlocking seed0 frames doggo flock sheep =
     let
         -- The flock within the sheep's awareness, paired with the vector to
         -- each sheep, and its norm.
@@ -91,8 +92,8 @@ updateFlocking frames doggo flock sheep =
             let
                 ( veryNearbyFlock, fringeFlock ) =
                     List.partition
-                      (\( _, _, norm ) -> norm <= gComfortZoneRadius)
-                      nearbyFlock
+                        (\( _, _, norm ) -> norm <= gComfortZoneRadius)
+                        nearbyFlock
             in
             if List.length veryNearbyFlock < 2 then
                 nearbyFlock
@@ -115,25 +116,58 @@ updateFlocking frames doggo flock sheep =
                     V2.norm diff
             in
             if norm <= gAwarenessRadius then
-                V2.scale gDoggoRepelForce (V2.negate (V2.signorm diff))
+                V2.add
+                    -- Turn away from the doggo
+                    (V2.scale gDoggoRepelForce (V2.negate (V2.signorm diff)))
+                    -- Run a bit faster
+                    (V2.scale gDoggoNearbyVelocity (V2.signorm sheep.vel))
 
             else
                 V2.zero
-    in
-    { sheep
-        | vel =
-            -- New sheep's base velocity is calculated as:
-            --
-            --   * 60% its previous velocity
-            --   * 40% the nearby flock's velocity (hive mind)
-            --
-            -- Then, the flock's and doggo's forces are applied, and the
-            -- velocity is clamped.
-            V2.lerp 0.6 sheep.vel flockVelocity
+
+        newVelocity : V2
+        newVelocity =
+            let
+                rotate : V2 -> V2
+                rotate =
+                    let
+                        ( pct, seed1 ) =
+                            Random.step (Random.float 0 1) seed0
+                    in
+                    if pct < 0.5 then
+                        let
+                            ( radians, _ ) =
+                                Random.step (Random.float -0.01 0.01) seed1
+                        in
+                        V2.rotate radians
+
+                    else
+                        identity
+            in
+            (if V2.isZero flockVelocity then
+                sheep.vel
+
+             else
+                flockVelocity
+            )
                 |> V2.add flockForce
                 |> V2.add doggoForce
                 |> V2.minNorm gMinVelocity
                 |> V2.maxNorm gMaxVelocity
+                |> rotate
+
+        newVelocity2 =
+            let
+                theta =
+                    V2.angleBetween newVelocity sheep.vel
+            in
+            if abs theta > gTurnRate then
+                V2.rotate (theta - Radians.signum theta * gTurnRate) newVelocity
+            else
+                newVelocity
+    in
+    { sheep
+        | vel = newVelocity2
         , pos = P2.add sheep.pos (V2.scale frames sheep.vel)
         , food = sheep.food - (gFoodLossRate * frames)
     }
@@ -247,7 +281,7 @@ gMinVelocity =
 -}
 gTurnRate : Radians
 gTurnRate =
-    0.01
+    0.10
 
 
 {-| How far a sheep is aware of its surroundings.
@@ -289,6 +323,13 @@ gSheepRepelForce =
 gDoggoRepelForce : Float
 gDoggoRepelForce =
     gSheepRepelForce * 50
+
+
+{-| How much additional velocity a sheep gets when there is a doggo nearby.
+-}
+gDoggoNearbyVelocity : Float
+gDoggoNearbyVelocity =
+    1
 
 
 gFoodLossRate : Float

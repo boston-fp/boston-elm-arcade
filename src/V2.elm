@@ -1,4 +1,4 @@
-module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, minNorm, negate, norm, overX, overY, pow, project, quadrance, rotate, scale, signorm, sum, toDegrees, toRadians, x, y, zero)
+module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, isZero, lerp, maxNorm, minNorm, negate, norm, overX, overY, pow, project, quadrance, rotate, scale, signorm, sum, toDegrees, toRadians, x, y, zero)
 
 import Radians exposing (Radians)
 
@@ -38,6 +38,11 @@ fromDegrees =
 fromRadians : Radians -> V2
 fromRadians r =
     V2 (cos r) (sin r)
+
+
+isZero : V2 -> Bool
+isZero (V2 vx vy) =
+    vx == 0 && vy == 0
 
 
 lerp : Float -> V2 -> V2 -> V2

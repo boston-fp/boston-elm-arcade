@@ -26,6 +26,7 @@ type alias Model =
     , borks : Borks
     , windowSize : WindowSize
     , totalFrames : Float
+    , seed : Random.Seed
     }
 
 
@@ -89,15 +90,15 @@ integratePos frames entity =
     P2.add entity.pos (V2.scale frames entity.vel)
 
 
-updateFlock : Float -> Doggo -> (List Sheep -> List Sheep)
-updateFlock frames doggo =
+updateFlock : Random.Seed -> Float -> Doggo -> (List Sheep -> List Sheep)
+updateFlock seed frames doggo =
     SelectList.selectedMapForList
         (\flock ->
             let
                 ( herd1, sheep, herd2 ) =
                     SelectList.toTuple flock
             in
-            Sheep.update frames doggo (herd1 ++ herd2) sheep
+            Sheep.update seed frames doggo (herd1 ++ herd2) sheep
         )
 
 
@@ -208,6 +209,7 @@ init =
     , sheep = randomFlock 100 (Random.initialSeed 0)
     , windowSize = WindowSize 0 0
     , totalFrames = 0
+    , seed = Random.initialSeed 0
     }
 
 
@@ -220,8 +222,11 @@ update msg model =
     case msg of
         Frame frames ->
             let
+                ( freshSeed, newSeed ) =
+                    Random.step Random.independentSeed model.seed
+
                 newFlock =
-                    updateFlock frames model.doggo model.sheep
+                    updateFlock freshSeed frames model.doggo model.sheep
 
                 newDoggo =
                     moveDoggo frames model.doggo
@@ -232,6 +237,7 @@ update msg model =
                     , sheep = newFlock
                     , totalFrames = model.totalFrames + frames
                     , borks = stepBorks frames model.borks
+                    , seed = newSeed
                 }
 
         WindowResized size ->
@@ -387,7 +393,7 @@ viewDoggo doggo frames =
                 4
                 |> filled (uniform (rgb 148 80 0))
                 |> shift ( -16, 0 )
-                |> rotate (sin (frames / (pi * 4)) / 4)
+                |> rotate (sin (frames / pi) / 2)
     in
     group [ body, tail, head ]
         |> rotate (radians doggo.angle)

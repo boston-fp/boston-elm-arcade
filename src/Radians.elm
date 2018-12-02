@@ -1,8 +1,8 @@
-module Radians exposing (..)
+module Radians exposing (Radians, fromDegrees, signum, toDegrees)
 
 
-type alias Radians
-    = Float
+type alias Radians =
+    Float
 
 
 fromDegrees : Float -> Radians
