@@ -58,37 +58,50 @@ updateFlocking frames flock sheep =
         flockForce : V2
         flockForce =
             nearbyFlock
-                |> List.map
-                    (\otherSheep ->
-                        let
-                            diff =
-                                P2.diff otherSheep.pos sheep.pos
-
-                            norm =
-                                V2.norm diff
-                        in
-                        if norm <= gPersonalSpaceRadius then
-                            (V2.negate (V2.signorm diff))
-                            -- V2.scale (-gForce / (norm * norm)) diff
-
-                        else if norm <= gComfortZoneRadius then
-                            V2.zero
-
-                        else
-                            (V2.signorm diff)
-                     -- V2.scale (gForce / (norm * norm)) diff
-                    )
+                |> List.map (sheepForce sheep)
                 |> V2.sum
-                |> V2.scale (1 / toFloat (List.length flock))
     in
     { sheep
         | vel =
+            -- New sheep's velocity is calculated as:
+            --
+            --   * 50% its previous velocity
+            --   * 50% the flock's (average) velocity
+            --
+            -- Then, the flock's individual forces are applied, and the velocity
+            -- is capped.
             V2.lerp 0.5 sheep.vel flockVelocity
                 |> V2.add flockForce
                 |> V2.maxNorm gMaxVelocity
         , pos = P2.add sheep.pos (V2.scale frames sheep.vel)
         , food = sheep.food - (gFoodLossRate * frames)
     }
+
+
+{-| Calculate the force one sheep has on another:
+
+    * If the sheep are within the "personal space", they repel
+    * If the sheep are within the "comfort zone", no force
+    * Otherwise, they attract (constant force)
+
+-}
+sheepForce : Sheep -> Sheep -> V2
+sheepForce sheep otherSheep =
+    let
+        diff =
+            P2.diff otherSheep.pos sheep.pos
+
+        norm =
+            V2.norm diff
+    in
+    if norm <= gPersonalSpaceRadius then
+        V2.scale gForce (V2.negate (V2.signorm diff))
+
+    else if norm <= gComfortZoneRadius then
+        V2.zero
+
+    else
+        V2.scale gForce (V2.signorm diff)
 
 
 updateGrazing : Float -> List Sheep -> Sheep -> Sheep
@@ -198,7 +211,7 @@ gComfortZoneRadius =
 
 gForce : Float
 gForce =
-    0.1
+    0.5
 
 
 {-| Sheep inside each others' personal space repel each other.
