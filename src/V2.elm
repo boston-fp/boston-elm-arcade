@@ -1,4 +1,4 @@
-module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, negate, norm, overX, overY, project, quadrance, rotate, scale, signorm, toDegrees, toRadians, x, y, zero)
+module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, lerp, maxNorm, negate, norm, overX, overY, pow, project, quadrance, rotate, scale, signorm, sum, toDegrees, toRadians, x, y, zero)
 
 import Radians exposing (Radians)
 
@@ -83,6 +83,11 @@ overY f (V2 vx vy) =
     V2 vx (f vy)
 
 
+pow : Float -> V2 -> V2
+pow p (V2 vx vy) =
+    V2 (vx ^ p) (vy ^ p)
+
+
 {-| 'project v w' computes the projection of 'w' onto 'v'.
 -}
 project : V2 -> V2 -> V2
@@ -121,6 +126,11 @@ scale s (V2 vx vy) =
 signorm : V2 -> V2
 signorm v =
     scale (1 / norm v) v
+
+
+sum : List V2 -> V2
+sum =
+    List.foldl add zero
 
 
 toDegrees : V2 -> Float

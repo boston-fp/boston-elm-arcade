@@ -38,9 +38,9 @@ update frames flock sheep =
 updateFlocking : Float -> List Sheep -> Sheep -> Sheep
 updateFlocking frames flock sheep =
     let
-        -- The herd within the sheep's awareness.
-        nearbyHerd : List Sheep
-        nearbyHerd =
+        -- The flock within the sheep's awareness.
+        nearbyFlock : List Sheep
+        nearbyFlock =
             List.filter
                 (\nearbySheep ->
                     P2.distanceBetween sheep.pos nearbySheep.pos
@@ -48,34 +48,43 @@ updateFlocking frames flock sheep =
                 )
                 flock
 
-        herdVelocity : V2
-        herdVelocity =
-            List.foldl
-                (.vel >> V2.add)
-                V2.zero
-                nearbyHerd
+        -- Average velocity of a sheep in the flock.
+        flockVelocity : V2
+        flockVelocity =
+            nearbyFlock
+                |> List.foldl (.vel >> V2.add) V2.zero
+                |> V2.scale (1 / toFloat (List.length flock))
 
-        angleToHerdVelocity : Radians
-        angleToHerdVelocity =
-            V2.angleBetween sheep.vel herdVelocity
+        flockForce : V2
+        flockForce =
+            nearbyFlock
+                |> List.map
+                    (\otherSheep ->
+                        let
+                            diff =
+                                P2.diff otherSheep.pos sheep.pos
 
-        angleToRotate : Radians
-        angleToRotate =
-            let
-                angle =
-                    frames * gTurnRate
-            in
-            -- Avoid over-rotation: if the sheep can rotate to become
-            -- parallel with the flock this frame, then do so
-            if angle >= abs angleToHerdVelocity then
-                angleToHerdVelocity
+                            norm =
+                                V2.norm diff
+                        in
+                        if norm <= gPersonalSpaceRadius then
+                            (V2.negate (V2.signorm diff))
+                            -- V2.scale (-gForce / (norm * norm)) diff
 
-            else
-                Radians.signum angleToHerdVelocity * angle
+                        else if norm <= gComfortZoneRadius then
+                            V2.zero
+
+                        else
+                            (V2.signorm diff)
+                     -- V2.scale (gForce / (norm * norm)) diff
+                    )
+                |> V2.sum
+                |> V2.scale (1 / toFloat (List.length flock))
     in
     { sheep
         | vel =
-            V2.rotate angleToRotate sheep.vel
+            V2.lerp 0.5 sheep.vel flockVelocity
+                |> V2.add flockForce
                 |> V2.maxNorm gMaxVelocity
         , pos = P2.add sheep.pos (V2.scale frames sheep.vel)
         , food = sheep.food - (gFoodLossRate * frames)
@@ -97,14 +106,6 @@ updateSleeping frames flock sheep =
 
 
 
--- {-| Calculate a sheep's velocity, as a pure of inputs. Currently,
--- that's just the doggo (but in the future will include the other shep).
--- -}
--- calculateSheepVelocity : Doggo -> Sheep -> V2
--- calculateSheepVelocity doggo shep =
---     repel doggo shep
---         |> V2.scale (100 / shep.mass)
---         |> V2.maxNorm maxSheepVelocity
 --------------------------------------------------------------------------------
 -- View
 --------------------------------------------------------------------------------
@@ -123,6 +124,17 @@ view sheep =
 
                 Sleeping ->
                     Color.rgb 0 0 255
+
+        radii c =
+            Collage.group
+                [ Collage.circle gAwarenessRadius
+                    |> Collage.outlined (Collage.dot Collage.thin (Collage.uniform Color.black))
+                , Collage.circle gComfortZoneRadius
+                    |> Collage.outlined (Collage.dot Collage.thin (Collage.uniform Color.green))
+                , Collage.circle gPersonalSpaceRadius
+                    |> Collage.outlined (Collage.dot Collage.thin (Collage.uniform Color.red))
+                , c
+                ]
     in
     Collage.group
         [ Collage.rectangle
@@ -140,6 +152,12 @@ view sheep =
             |> Collage.shift ( 20, 0 )
         ]
         |> Collage.scale sheep.mass
+        |> (if False then
+                radii
+
+            else
+                identity
+           )
         |> Collage.rotate (V2.toRadians sheep.vel)
         |> Collage.shift ( P2.x sheep.pos, P2.y sheep.pos )
 
@@ -164,8 +182,29 @@ gTurnRate =
     0.01
 
 
+{-| How far a sheep is aware of its surroundings.
+-}
 gAwarenessRadius : Float
 gAwarenessRadius =
+    400
+
+
+{-| Sheep prefer to be within this many units of other sheep.
+-}
+gComfortZoneRadius : Float
+gComfortZoneRadius =
+    300
+
+
+gForce : Float
+gForce =
+    0.1
+
+
+{-| Sheep inside each others' personal space repel each other.
+-}
+gPersonalSpaceRadius : Float
+gPersonalSpaceRadius =
     100
 
 

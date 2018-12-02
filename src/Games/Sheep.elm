@@ -15,6 +15,7 @@ import Json.Decode
 import Key exposing (Key(..), KeyType(..))
 import P2 exposing (P2(..))
 import Radians exposing (Radians)
+import Random
 import SelectList exposing (SelectList)
 import V2 exposing (V2(..))
 
@@ -100,26 +101,6 @@ updateFlock frames doggo =
         )
 
 
-
--- let
---     sheep1 : List Sheep
---     sheep1 =
---         List.map
---             (\sheep ->
---                 { sheep
---                     | pos = integratePos frames sheep
---                     , vel = calculateSheepVelocity model.doggo sheep
---                 }
---             )
---             model.sheep
--- in
--- noCmd
---     { model
---         | doggo = moveDoggo frames model.doggo
---         , sheep = sheep1
---     }
-
-
 {-| 'repel p q' calculates a vector pointing from 'p' to 'q', with norm
 proportional to the inverse square of the distance bewteen 'p' and 'q'.
 
@@ -185,6 +166,39 @@ bearingDoggo d =
 
 init : Model
 init =
+    let
+        randomSheep : Random.Seed -> ( Sheep, Random.Seed )
+        randomSheep seed0 =
+            let
+                ( px, seed1 ) =
+                    Random.step (Random.float -400 400) seed0
+
+                ( py, seed2 ) =
+                    Random.step (Random.float -400 400) seed1
+
+                ( vx, seed3 ) =
+                    Random.step (Random.float -4 4) seed2
+
+                ( vy, seed4 ) =
+                    Random.step (Random.float -4 4) seed3
+
+                ( m, seed5 ) =
+                    Random.step (Random.float 1 2) seed4
+            in
+            ( Sheep (P2 px py) (V2 vx vy) m 1 Sheep.Flocking, seed5 )
+
+        randomFlock : Int -> Random.Seed -> List Sheep
+        randomFlock n seed0 =
+            if n == 0 then
+                []
+
+            else
+                let
+                    ( sheep, seed1 ) =
+                        randomSheep seed0
+                in
+                sheep :: randomFlock (n - 1) seed1
+    in
     { doggo =
         { pos = P2 0 0
         , up = False
@@ -194,15 +208,7 @@ init =
         , angle = 0
         }
     , borks = Dict.Any.empty P2.asTuple
-    , sheep =
-        [ Sheep (P2 50 -150) (V2 4 8) 0.5 1 Sheep.Flocking
-        , Sheep (P2 -100 50) (V2 0 0) 1 1 Sheep.Flocking
-        , Sheep (P2 200 -50) (V2 0 0) 0.7 1 Sheep.Flocking
-        , Sheep (P2 100 -50) (V2 0 0) 2 1 Sheep.Flocking
-        , Sheep (P2 -50 100) (V2 0 0) 0.4 1 Sheep.Flocking
-        , Sheep (P2 -100 -50) (V2 0 0) 0.8 1 Sheep.Flocking
-        , Sheep (P2 0 -100) (V2 0 0) 1.2 1 Sheep.Flocking
-        ]
+    , sheep = randomFlock 10 (Random.initialSeed 0)
     , windowSize = WindowSize 0 0
     , totalFrames = 0
     }
