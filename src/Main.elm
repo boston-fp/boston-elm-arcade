@@ -252,11 +252,12 @@ subscriptions model =
     -- TODO: Don't make conditional subscriptions until
     -- https://github.com/elm/compiler/issues/1776
     -- is resolved
+    -- Sub.batch [ Sheep.subscriptions Sheep.init |> Sub.map SheepMsg ]
     Sub.batch
-        [ -- SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg
-          -- , Chansey.subscriptions Chansey.init |> Sub.map ChanseyMsg
-          -- , PlatformerUpdate.subs PlatformerModel.init |> Sub.map PlatformerMsg
-          Sheep.subscriptions Sheep.init |> Sub.map SheepMsg
+        [ SnakeUpdate.subs SnakeModel.init |> Sub.map SnakeMsg
+        , Chansey.subscriptions Chansey.init |> Sub.map ChanseyMsg
+        , PlatformerUpdate.subs PlatformerModel.init |> Sub.map PlatformerMsg
+        , Sheep.subscriptions Sheep.init |> Sub.map SheepMsg
         ]
 
 
