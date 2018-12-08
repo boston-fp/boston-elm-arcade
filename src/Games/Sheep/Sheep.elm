@@ -106,19 +106,20 @@ updateFlocking seed0 frames doggo flock sheep =
                     |> List.map (sheepForce sheep)
                     |> V2.sum
 
+        vectorToDoggo : V2
+        vectorToDoggo =
+            P2.diff doggo.pos sheep.pos
+
         doggoForce : V2
         doggoForce =
             let
-                diff =
-                    P2.diff doggo.pos sheep.pos
-
                 norm =
-                    V2.norm diff
+                    V2.norm vectorToDoggo
             in
             if norm <= gAwarenessRadius then
                 V2.add
                     -- Turn away from the doggo
-                    (V2.scale gDoggoRepelForce (V2.negate (V2.signorm diff)))
+                    (V2.scale gDoggoRepelForce (V2.negate (V2.signorm vectorToDoggo)))
                     -- Run a bit faster
                     (V2.scale gDoggoNearbyVelocity (V2.signorm sheep.vel))
 
@@ -159,10 +160,16 @@ updateFlocking seed0 frames doggo flock sheep =
         newVelocity2 =
             let
                 theta =
-                    V2.angleBetween newVelocity sheep.vel
+                    if V2.isBetween sheep.vel newVelocity vectorToDoggo then
+                        V2.angleBetween sheep.vel newVelocity - 2 * pi
+
+                    else
+                        V2.angleBetween sheep.vel newVelocity
             in
             if abs theta > gTurnRate then
-                V2.rotate (theta - Radians.signum theta * gTurnRate) newVelocity
+                newVelocity
+                  |> V2.rotate -theta
+                  |> V2.rotate (Radians.signum theta * gTurnRate)
             else
                 newVelocity
     in
@@ -281,7 +288,7 @@ gMinVelocity =
 -}
 gTurnRate : Radians
 gTurnRate =
-    0.10
+    0.05
 
 
 {-| How far a sheep is aware of its surroundings.

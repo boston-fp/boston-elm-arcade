@@ -1,4 +1,4 @@
-module V2 exposing (V2(..), add, angleBetween, diff, dot, fromDegrees, fromRadians, isZero, lerp, maxNorm, minNorm, negate, norm, overX, overY, pow, project, quadrance, rotate, scale, signorm, sum, toDegrees, toRadians, x, y, zero)
+module V2 exposing (..)
 
 import Radians exposing (Radians)
 
@@ -12,12 +12,58 @@ add (V2 vx vy) (V2 wx wy) =
     V2 (vx + wx) (vy + wy)
 
 
+aligned : V2 -> V2 -> Bool
+aligned v1 v2 =
+    dot v1 v2 >= 0
+
+
 {-| 'angleBetween v w' calculates the angle that 'v' must rotate by to be
-parallel to 'w'.
+parallel to 'w'. Range: [-pi, pi]
 -}
 angleBetween : V2 -> V2 -> Radians
 angleBetween (V2 vx vy) (V2 wx wy) =
-    atan2 wy wx - atan2 vy vx
+    let
+        angle =
+            atan2 wy wx - atan2 vy vx
+    in
+    if angle < -pi then
+        angle + 2 * pi
+
+    else if angle > pi then
+        angle - 2 * pi
+
+    else
+        angle
+
+
+isBetween : V2 -> V2 -> V2 -> Bool
+isBetween v1 v2 v =
+    let
+        v1u =
+            signorm v1
+
+        v2u =
+            signorm v2
+    in
+    if v1u == v2u then
+        signorm v == v1u
+
+    else if v1u == negate v2u then
+        True
+
+    else
+        let
+            vv1 =
+                dot v v1
+
+            vv2 =
+                dot v v2
+
+            v1v2 =
+                dot v1 v2
+        in
+        (vv1 * quadrance v2 >= vv2 * v1v2)
+            && (vv2 * quadrance v1 >= vv1 * v1v2)
 
 
 diff : V2 -> V2 -> V2
@@ -102,6 +148,11 @@ overX f (V2 vx vy) =
 overY : (Float -> Float) -> V2 -> V2
 overY f (V2 vx vy) =
     V2 vx (f vy)
+
+
+perpClockwise : V2 -> V2
+perpClockwise (V2 vx vy) =
+    V2 vy -vx
 
 
 pow : Float -> V2 -> V2
