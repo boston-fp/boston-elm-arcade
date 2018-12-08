@@ -113,15 +113,14 @@ updateFlocking seed0 frames doggo flock sheep =
         doggoForce : V2
         doggoForce =
             let
-                norm =
-                    V2.norm vectorToDoggo
+                quadrance =
+                    V2.quadrance vectorToDoggo
             in
-            if norm <= gAwarenessRadius then
-                V2.add
-                    -- Turn away from the doggo
-                    (V2.scale gDoggoRepelForce (V2.negate (V2.signorm vectorToDoggo)))
-                    -- Run a bit faster
-                    (V2.scale gDoggoNearbyVelocity (V2.signorm sheep.vel))
+            if quadrance <= gAwarenessRadius * gAwarenessRadius then
+                vectorToDoggo
+                    -- TODO name this magic number
+                    |> V2.scale (300 / quadrance)
+                    |> V2.negate
 
             else
                 V2.zero
@@ -168,8 +167,9 @@ updateFlocking seed0 frames doggo flock sheep =
             in
             if abs theta > gTurnRate then
                 newVelocity
-                  |> V2.rotate -theta
-                  |> V2.rotate (Radians.signum theta * gTurnRate)
+                    |> V2.rotate -theta
+                    |> V2.rotate (Radians.signum theta * gTurnRate)
+
             else
                 newVelocity
     in
@@ -276,7 +276,7 @@ view sheep =
 -}
 gMaxVelocity : Float
 gMaxVelocity =
-    1
+    3
 
 
 gMinVelocity : Float
@@ -325,18 +325,6 @@ gSheepAttractForce =
 gSheepRepelForce : Float
 gSheepRepelForce =
     gSheepAttractForce * 5
-
-
-gDoggoRepelForce : Float
-gDoggoRepelForce =
-    gSheepRepelForce * 50
-
-
-{-| How much additional velocity a sheep gets when there is a doggo nearby.
--}
-gDoggoNearbyVelocity : Float
-gDoggoNearbyVelocity =
-    1
 
 
 gFoodLossRate : Float
