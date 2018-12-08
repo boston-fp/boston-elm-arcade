@@ -39,16 +39,20 @@ type GameState
 
 gameStateParser : Parser (GameState -> a) a
 gameStateParser =
+    let
+        gamePath =
+            s << String.toLower << gameName
+    in
     oneOf
         [ Url.Parser.map NoGame Url.Parser.top
         , Url.Parser.map (PlayingSnake SnakeModel.init)
-            (s <| String.toLower <| gameName Snake)
+            (gamePath Snake)
         , Url.Parser.map (PlayingChansey Chansey.init)
-            (s <| String.toLower <| gameName Chansey)
+            (gamePath Chansey)
         , Url.Parser.map (PlayingPlatformer PlatformerModel.init)
-            (s <| String.toLower <| gameName Platformer)
+            (gamePath Platformer)
         , Url.Parser.map (PlayingSheep Sheep.init)
-            (s <| String.toLower <| gameName Sheep)
+            (gamePath Sheep)
         ]
 
 
