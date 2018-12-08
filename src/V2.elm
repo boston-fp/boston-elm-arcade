@@ -36,6 +36,11 @@ angleBetween (V2 vx vy) (V2 wx wy) =
         angle
 
 
+clampNorm : Float -> Float -> V2 -> V2
+clampNorm min max =
+    minNorm min >> maxNorm max
+
+
 isBetween : V2 -> V2 -> V2 -> Bool
 isBetween v1 v2 v =
     let

@@ -54,7 +54,7 @@ updateFlocking : Random.Seed -> Float -> { r | pos : P2 } -> List Sheep -> Sheep
 updateFlocking seed0 frames doggo flock sheep =
     let
         -- The flock within the sheep's awareness, paired with the vector to
-        -- each sheep, and its norm.
+        -- each sheep, and its quadrance.
         nearbyFlock : List ( Sheep, V2, Float )
         nearbyFlock =
             List.filterMap
@@ -63,11 +63,11 @@ updateFlocking seed0 frames doggo flock sheep =
                         vec =
                             P2.diff nearbySheep.pos sheep.pos
 
-                        norm =
-                            V2.norm vec
+                        quadrance =
+                            V2.quadrance vec
                     in
-                    if norm <= gAwarenessRadius then
-                        Just ( nearbySheep, vec, norm )
+                    if quadrance <= gAwarenessRadius * gAwarenessRadius then
+                        Just ( nearbySheep, vec, quadrance )
 
                     else
                         Nothing
@@ -106,7 +106,9 @@ updateFlocking seed0 frames doggo flock sheep =
             let
                 ( veryNearbyFlock, fringeFlock ) =
                     List.partition
-                        (\( _, _, norm ) -> norm <= gComfortZoneRadius)
+                        (\( _, _, quadrance ) ->
+                            quadrance <= gComfortZoneRadius * gComfortZoneRadius
+                        )
                         nearbyFlock
             in
             if List.length veryNearbyFlock < 2 then
@@ -116,7 +118,10 @@ updateFlocking seed0 frames doggo flock sheep =
 
             else
                 veryNearbyFlock
-                    |> List.filter (\( _, _, norm ) -> norm <= gPersonalSpaceRadius)
+                    |> List.filter
+                        (\( _, _, quadrance ) ->
+                            quadrance <= gPersonalSpaceRadius * gPersonalSpaceRadius
+                        )
                     |> List.map (sheepForce sheep)
                     |> V2.sum
 
@@ -142,18 +147,17 @@ updateFlocking seed0 frames doggo flock sheep =
         newVelocity : V2
         newVelocity =
             let
-                rotate : V2 -> V2
-                rotate =
+                randomlyRotate : V2 -> V2
+                randomlyRotate =
                     let
                         ( pct, seed1 ) =
                             Random.step (Random.float 0 1) seed0
                     in
                     if pct < 0.5 then
-                        let
-                            ( radians, _ ) =
-                                Random.step (Random.float -0.01 0.01) seed1
-                        in
-                        V2.rotate radians
+                        V2.rotate
+                            (Tuple.first
+                                (Random.step (Random.float -0.01 0.01) seed1)
+                            )
 
                     else
                         identity
@@ -166,23 +170,21 @@ updateFlocking seed0 frames doggo flock sheep =
             )
                 |> V2.add flockForce
                 |> V2.add doggoForce
-                |> V2.minNorm gMinVelocity
-                |> V2.maxNorm gMaxVelocity
-                |> rotate
+                |> V2.clampNorm gMinVelocity gMaxVelocity
+                |> randomlyRotate
 
         newVelocity2 =
             let
                 theta =
-                    if V2.isBetween sheep.vel newVelocity vectorToDoggo then
-                        V2.angleBetween sheep.vel newVelocity - 2 * pi
-
-                    else
-                        V2.angleBetween sheep.vel newVelocity
+                    V2.angleBetween sheep.vel newVelocity
             in
+            -- Unhappy path: the sheep's new velocity is too great an angle away
+            -- from its previous velocity. So un-rotate the new velocity, then
+            -- re-rotate it in the same direction, but only 'gTurnRate' radians.
             if abs theta > gTurnRate then
-                newVelocity
-                    |> V2.rotate -theta
-                    |> V2.rotate (Radians.signum theta * gTurnRate)
+                V2.rotate
+                    (-theta + Radians.signum theta * gTurnRate)
+                    newVelocity
 
             else
                 newVelocity
@@ -201,8 +203,8 @@ updateFlocking seed0 frames doggo flock sheep =
 
 -}
 sheepForce : Sheep -> ( Sheep, V2, Float ) -> V2
-sheepForce sheep ( otherSheep, diff, norm ) =
-    if norm <= gPersonalSpaceRadius then
+sheepForce sheep ( otherSheep, diff, quadrance ) =
+    if quadrance <= gPersonalSpaceRadius * gPersonalSpaceRadius then
         V2.scale gSheepRepelForce (V2.negate (V2.signorm diff))
 
     else
