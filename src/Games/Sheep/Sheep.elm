@@ -1,4 +1,11 @@
-module Games.Sheep.Sheep exposing (Sheep, State(..), gMaxVelocity, update, view)
+module Games.Sheep.Sheep exposing
+    ( Sheep
+    , SheepColor(..)
+    , State(..)
+    , gMaxVelocity
+    , update
+    , view
+    )
 
 import Collage exposing (Collage)
 import Color exposing (Color)
@@ -14,7 +21,14 @@ type alias Sheep =
     , mass : Float
     , food : Float
     , state : State
+    , color : SheepColor
     }
+
+
+type SheepColor
+    = Black
+    | Brown
+    | White
 
 
 type State
@@ -248,7 +262,19 @@ view sheep =
         , Collage.rectangle
             36
             24
-            |> Collage.filled (Collage.uniform (Color.rgb 220 220 220))
+            |> Collage.filled
+                (Collage.uniform
+                    (case sheep.color of
+                        White ->
+                            Color.rgb 220 220 220
+
+                        Black ->
+                            Color.rgb 40 40 40
+
+                        Brown ->
+                            Color.rgb 139 69 19
+                    )
+                )
         , Collage.rectangle
             8
             8

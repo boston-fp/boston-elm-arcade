@@ -182,8 +182,19 @@ init =
 
                 ( m, seed5 ) =
                     Random.step (Random.float 1 1.1) seed4
+
+                ( c, seed6 ) =
+                    Random.step (Random.uniform Sheep.Black [ Sheep.Brown, Sheep.White ]) seed5
             in
-            ( Sheep (P2 px py) (V2 vx vy) m 1 Sheep.Flocking, seed5 )
+            ( { pos = P2 px py
+              , vel = V2 vx vy
+              , mass = m
+              , food = 1
+              , state = Sheep.Flocking
+              , color = c
+              }
+            , seed6
+            )
 
         randomFlock : Int -> Random.Seed -> List Sheep
         randomFlock n seed0 =
