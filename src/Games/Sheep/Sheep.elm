@@ -1,4 +1,4 @@
-module Games.Sheep.Sheep exposing (Sheep, State(..), update, view)
+module Games.Sheep.Sheep exposing (Sheep, State(..), gMaxVelocity, update, view)
 
 import Collage exposing (Collage)
 import Color exposing (Color)

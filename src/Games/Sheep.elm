@@ -141,7 +141,7 @@ doggoVel doggo =
                     5
 
                 Back ->
-                    -2
+                    Sheep.gMaxVelocity
     in
     V2.scale magnitude vec
 
