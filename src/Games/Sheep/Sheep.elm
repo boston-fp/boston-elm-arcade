@@ -12,7 +12,7 @@ import Color exposing (Color)
 import P2 exposing (P2)
 import Radians exposing (Radians)
 import Random
-import V2 exposing (V2)
+import V2 exposing (V2(..))
 
 
 type alias Sheep =
@@ -77,6 +77,11 @@ updateFlocking seed0 frames doggo flock sheep =
         -- Average velocity of a sheep in the flock.
         flockVelocity : V2
         flockVelocity =
+            -- case List.head (List.sortBy (\( _, _, quadrance ) -> quadrance) nearbyFlock) of
+            --     Nothing ->
+            --         V2.zero
+            --     Just ( nearbySheep, _, _ ) ->
+            --         nearbySheep.vel
             nearbyFlock
                 |> List.map (\( nearbySheep, _, _ ) -> nearbySheep.vel)
                 |> V2.sum
@@ -86,13 +91,13 @@ updateFlocking seed0 frames doggo flock sheep =
         -- nearby sheep necessarily has a force on the current one.
         --
         -- * A sheep is considered "content" if, of the sheep it is aware of
-        --   (in its "awareness radius"), at least two of them is in its
+        --   (in its "awareness radius"), at least one of them is in its
         --   "comfort zone" (even if that sheep is too close for comfort, i.e.
         --   in its "personal space").
         --
         -- * If a sheep is "content", then it feels part of a flock, and is not
         --   explicitly attracted to any nearby sheep. However, it is still
-        --   repelled by sheep in its "personal space"
+        --   repelled by sheep in its "personal space".
         --
         -- * Otherwise, if a sheep is not "content", then it is attracted to any
         --   sheep it is aware of (since, per the above logic, they all must be
@@ -111,7 +116,7 @@ updateFlocking seed0 frames doggo flock sheep =
                         )
                         nearbyFlock
             in
-            if List.length veryNearbyFlock < 2 then
+            if List.isEmpty veryNearbyFlock then
                 nearbyFlock
                     |> List.map (sheepForce sheep)
                     |> V2.sum
@@ -147,31 +152,23 @@ updateFlocking seed0 frames doggo flock sheep =
         newVelocity : V2
         newVelocity =
             let
-                randomlyRotate : V2 -> V2
-                randomlyRotate =
-                    let
-                        ( pct, seed1 ) =
-                            Random.step (Random.float 0 1) seed0
-                    in
-                    if pct < 0.5 then
-                        V2.rotate
-                            (Tuple.first
-                                (Random.step (Random.float -0.01 0.01) seed1)
+                noise : V2
+                noise =
+                    Tuple.first
+                        (Random.step
+                            (Random.map2 V2
+                                (Random.float -0.25 0.25)
+                                (Random.float -0.25 0.25)
                             )
-
-                    else
-                        identity
+                            seed0
+                        )
             in
-            (if V2.isZero flockVelocity then
-                sheep.vel
-
-             else
-                flockVelocity
-            )
+            sheep.vel
+                |> V2.add flockVelocity
                 |> V2.add flockForce
                 |> V2.add doggoForce
+                |> V2.add noise
                 |> V2.clampNorm gMinVelocity gMaxVelocity
-                |> randomlyRotate
 
         newVelocity2 =
             let
@@ -199,16 +196,19 @@ updateFlocking seed0 frames doggo flock sheep =
 {-| Calculate the force one sheep has on another:
 
     * If the sheep are within the "personal space", they repel
-    * Otherwise, they attract (constant force)
+    * Otherwise, they attract
 
 -}
 sheepForce : Sheep -> ( Sheep, V2, Float ) -> V2
 sheepForce sheep ( otherSheep, diff, quadrance ) =
     if quadrance <= gPersonalSpaceRadius * gPersonalSpaceRadius then
-        V2.scale gSheepRepelForce (V2.negate (V2.signorm diff))
+        diff
+            |> V2.scale (20 / quadrance)
+            |> V2.negate
 
     else
-        V2.scale gSheepAttractForce (V2.signorm diff)
+        diff
+            |> V2.scale (20 / quadrance)
 
 
 updateGrazing : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
@@ -326,7 +326,7 @@ gAwarenessRadius =
     400
 
 
-{-| Sheep prefer to be within this many units of other sheep.
+{-| Sheep prefer to be within this many units of at least one other sheep.
 -}
 gComfortZoneRadius : Float
 gComfortZoneRadius =
@@ -338,21 +338,6 @@ gComfortZoneRadius =
 gPersonalSpaceRadius : Float
 gPersonalSpaceRadius =
     40
-
-
-gMaxFlockForce : Float
-gMaxFlockForce =
-    0.1
-
-
-gSheepAttractForce : Float
-gSheepAttractForce =
-    0.01
-
-
-gSheepRepelForce : Float
-gSheepRepelForce =
-    gSheepAttractForce * 5
 
 
 gFoodLossRate : Float
