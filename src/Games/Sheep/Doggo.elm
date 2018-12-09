@@ -16,9 +16,12 @@ type alias Doggo =
 type alias Config r =
     { r
         | crawlingDoggoTurnRate : Float
+        , crawlingDoggoVelocity : Float
         , maxSheepVelocity : Float
         , runningDoggoTurnRate : Float
+        , runningDoggoVelocity : Float
         , walkingDoggoTurnRate : Float
+        , walkingDoggoVelocity : Float
     }
 
 
@@ -108,13 +111,13 @@ doggoVel config controller doggo =
         magnitude =
             case bearingDoggo controller of
                 Forward ->
-                    10
+                    config.runningDoggoVelocity
 
                 Halt ->
-                    5
+                    config.walkingDoggoVelocity
 
                 Back ->
-                    config.maxSheepVelocity
+                    config.crawlingDoggoVelocity
     in
     V2.scale magnitude vec
 
