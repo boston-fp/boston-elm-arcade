@@ -1,7 +1,5 @@
 module Games.Sheep.Fence exposing (..)
 
-import Collage exposing (Collage)
-import Color
 import LineSegment exposing (LineSegment)
 import P2 exposing (P2(..))
 import V2 exposing (V2(..))
@@ -25,13 +23,6 @@ forceOn thing fence =
 
     else
         V2.scale (gFenceForce / quadrance) vec
-
-
-view : Fence -> Collage msg
-view ( P2 x1 y1, P2 x2 y2 ) =
-    Collage.traced
-        (Collage.solid 10 (Collage.uniform Color.black))
-        (Collage.segment ( x1, y1 ) ( x2, y2 ))
 
 
 {-| How much the fence repels.

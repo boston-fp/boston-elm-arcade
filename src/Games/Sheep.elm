@@ -5,9 +5,10 @@ import Browser.Events
 import Collage exposing (..)
 import Collage.Layout exposing (..)
 import Collage.Render as Render exposing (svg)
-import Collage.Text as Text exposing (..)
-import Color exposing (Color, rgb)
+import Collage.Text exposing (..)
+import Color exposing (..)
 import Dict.Any exposing (AnyDict)
+import Games.Sheep.Bork as Bork exposing (Borks)
 import Games.Sheep.Config exposing (Config)
 import Games.Sheep.Controller as Controller exposing (Controller)
 import Games.Sheep.Doggo as Doggo exposing (Doggo)
@@ -38,10 +39,6 @@ type alias Model =
     }
 
 
-type alias Borks =
-    AnyDict ( Float, Float ) P2 Bork
-
-
 type alias WindowSize =
     { widthPx : Int
     , heightPx : Int
@@ -52,35 +49,6 @@ type Msg
     = Frame Float
     | KeyEvent Key.Event
     | WindowResized WindowSize
-
-
-type alias Bork =
-    { dir : V2
-    , framesLeft : Float
-    }
-
-
-newBork : Config -> Controller -> Doggo -> Borks -> Borks
-newBork config controller doggo =
-    Dict.Any.update doggo.pos
-        (\existingBork ->
-            case existingBork of
-                Just bork ->
-                    Just bork
-
-                Nothing ->
-                    Just
-                        { dir = V2.signorm (Doggo.doggoVel config controller doggo)
-                        , framesLeft = 10
-                        }
-        )
-
-
-stepBorks : Float -> Borks -> Borks
-stepBorks frames borks =
-    borks
-        |> Dict.Any.map (\_ bork -> { bork | framesLeft = bork.framesLeft - 1 })
-        |> Dict.Any.filter (\_ bork -> bork.framesLeft > 0)
 
 
 updateFlock :
@@ -206,7 +174,7 @@ update msg model =
                     | doggo = newDoggo
                     , sheep = newFlock
                     , totalFrames = model.totalFrames + frames
-                    , borks = stepBorks frames model.borks
+                    , borks = Bork.stepBorks frames model.borks
                     , seed = newSeed.seed
                 }
 
@@ -220,7 +188,7 @@ update msg model =
                         Controller.Space ->
                             noCmd
                                 { model
-                                    | borks = newBork model.config newController model.doggo model.borks
+                                    | borks = Bork.newBork model.config newController model.doggo model.borks
                                     , controller = newController
                                 }
 
@@ -232,6 +200,16 @@ update msg model =
 
                 Controller.Noop newController ->
                     noCmd { model | controller = newController }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.batch
+        [ Browser.Events.onAnimationFrameDelta (\s -> Frame (s * 3 / 50))
+        , Browser.Events.onKeyDown (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
+        , Browser.Events.onKeyUp (Json.Decode.map (KeyEvent << KeyUp) Key.decoder)
+        , Browser.Events.onResize (\w h -> WindowResized (WindowSize w h))
+        ]
 
 
 view : Model -> Html Msg
@@ -258,8 +236,8 @@ view model =
                 List.concat
                     [ [ viewDoggo model.doggo model.totalFrames ]
                     , [ viewBorks model.borks ]
-                    , List.map Fence.view model.fences
-                    , List.map Sheep.view model.sheep
+                    , List.map viewFence model.fences
+                    , List.map viewSheep model.sheep
                     ]
 
         -- , Html.text (Debug.toString model)
@@ -271,7 +249,7 @@ viewBorks borks =
     Dict.Any.toList borks
         |> List.map
             (\( pos, bork ) ->
-                Text.fromString "bork!"
+                Collage.Text.fromString "bork!"
                     |> rendered
                     |> shift (P2.asTuple pos)
                     |> scale bork.framesLeft
@@ -279,7 +257,7 @@ viewBorks borks =
         |> group
 
 
-viewDoggo : Doggo -> Float -> Collage Msg
+viewDoggo : Doggo -> Float -> Collage msg
 viewDoggo doggo frames =
     let
         body =
@@ -314,14 +292,74 @@ viewDoggo doggo frames =
         |> shift ( P2.x doggo.pos, P2.y doggo.pos )
 
 
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.batch
-        [ Browser.Events.onAnimationFrameDelta (\s -> Frame (s * 3 / 50))
-        , Browser.Events.onKeyDown (Json.Decode.map (KeyEvent << KeyDown) Key.decoder)
-        , Browser.Events.onKeyUp (Json.Decode.map (KeyEvent << KeyUp) Key.decoder)
-        , Browser.Events.onResize (\w h -> WindowResized (WindowSize w h))
+viewFence : Fence -> Collage msg
+viewFence ( P2 x1 y1, P2 x2 y2 ) =
+    traced
+        (solid 10 (uniform black))
+        (segment ( x1, y1 ) ( x2, y2 ))
+
+
+viewSheep : Sheep -> Collage msg
+viewSheep sheep =
+    let
+        color =
+            case sheep.state of
+                Sheep.Flocking ->
+                    rgb 255 0 0
+
+                Sheep.Grazing ->
+                    rgb 0 255 0
+
+                Sheep.Sleeping ->
+                    rgb 0 0 255
+
+        radii c =
+            group
+                [ circle Sheep.gAwarenessRadius
+                    |> outlined (dot thin (uniform black))
+                , circle Sheep.gComfortZoneRadius
+                    |> outlined (dot thin (uniform green))
+                , circle Sheep.gPersonalSpaceRadius
+                    |> outlined (dot thin (uniform red))
+                , c
+                ]
+    in
+    group
+        [ rectangle
+            4
+            4
+            |> filled (uniform color)
+        , rectangle
+            36
+            24
+            |> filled
+                (uniform
+                    (case sheep.color of
+                        Sheep.White ->
+                            rgb 220 220 220
+
+                        Sheep.Black ->
+                            rgb 40 40 40
+
+                        Sheep.Brown ->
+                            rgb 139 69 19
+                    )
+                )
+        , rectangle
+            8
+            8
+            |> filled (uniform (rgb 20 20 20))
+            |> shift ( 20, 0 )
         ]
+        |> scale sheep.mass
+        |> (if False then
+                radii
+
+            else
+                identity
+           )
+        |> rotate (V2.toRadians sheep.vel)
+        |> shift ( P2.x sheep.pos, P2.y sheep.pos )
 
 
 main : Program () Model Msg

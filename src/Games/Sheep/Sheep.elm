@@ -2,12 +2,12 @@ module Games.Sheep.Sheep exposing
     ( Sheep
     , SheepColor(..)
     , State(..)
+    , gAwarenessRadius
+    , gComfortZoneRadius
+    , gPersonalSpaceRadius
     , update
-    , view
     )
 
-import Collage exposing (Collage)
-import Color exposing (Color)
 import Games.Sheep.Eff as Eff exposing (Eff)
 import Games.Sheep.Fence as Fence exposing (Fence)
 import P2 exposing (P2)
@@ -281,75 +281,6 @@ updateSleeping :
     -> Sheep
 updateSleeping frames fences doggo flock sheep =
     sheep
-
-
-
---------------------------------------------------------------------------------
--- View
---------------------------------------------------------------------------------
-
-
-view : Sheep -> Collage msg
-view sheep =
-    let
-        color =
-            case sheep.state of
-                Flocking ->
-                    Color.rgb 255 0 0
-
-                Grazing ->
-                    Color.rgb 0 255 0
-
-                Sleeping ->
-                    Color.rgb 0 0 255
-
-        radii c =
-            Collage.group
-                [ Collage.circle gAwarenessRadius
-                    |> Collage.outlined (Collage.dot Collage.thin (Collage.uniform Color.black))
-                , Collage.circle gComfortZoneRadius
-                    |> Collage.outlined (Collage.dot Collage.thin (Collage.uniform Color.green))
-                , Collage.circle gPersonalSpaceRadius
-                    |> Collage.outlined (Collage.dot Collage.thin (Collage.uniform Color.red))
-                , c
-                ]
-    in
-    Collage.group
-        [ Collage.rectangle
-            4
-            4
-            |> Collage.filled (Collage.uniform color)
-        , Collage.rectangle
-            36
-            24
-            |> Collage.filled
-                (Collage.uniform
-                    (case sheep.color of
-                        White ->
-                            Color.rgb 220 220 220
-
-                        Black ->
-                            Color.rgb 40 40 40
-
-                        Brown ->
-                            Color.rgb 139 69 19
-                    )
-                )
-        , Collage.rectangle
-            8
-            8
-            |> Collage.filled (Collage.uniform (Color.rgb 20 20 20))
-            |> Collage.shift ( 20, 0 )
-        ]
-        |> Collage.scale sheep.mass
-        |> (if False then
-                radii
-
-            else
-                identity
-           )
-        |> Collage.rotate (V2.toRadians sheep.vel)
-        |> Collage.shift ( P2.x sheep.pos, P2.y sheep.pos )
 
 
 
