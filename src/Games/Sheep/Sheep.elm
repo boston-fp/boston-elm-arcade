@@ -9,6 +9,7 @@ module Games.Sheep.Sheep exposing
 
 import Collage exposing (Collage)
 import Color exposing (Color)
+import Games.Sheep.Fence as Fence exposing (Fence)
 import P2 exposing (P2)
 import Radians exposing (Radians)
 import Random
@@ -37,21 +38,35 @@ type State
     | Sleeping
 
 
-update : Random.Seed -> Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
-update seed frames doggo flock sheep =
+update :
+    Random.Seed
+    -> Float
+    -> List Fence
+    -> { r | pos : P2 }
+    -> List Sheep
+    -> Sheep
+    -> Sheep
+update seed frames fences doggo flock sheep =
     case sheep.state of
         Flocking ->
-            updateFlocking seed frames doggo flock sheep
+            updateFlocking seed frames fences doggo flock sheep
 
         Grazing ->
-            updateGrazing frames doggo flock sheep
+            updateGrazing frames fences doggo flock sheep
 
         Sleeping ->
-            updateSleeping frames doggo flock sheep
+            updateSleeping frames fences doggo flock sheep
 
 
-updateFlocking : Random.Seed -> Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
-updateFlocking seed0 frames doggo flock sheep =
+updateFlocking :
+    Random.Seed
+    -> Float
+    -> List Fence
+    -> { r | pos : P2 }
+    -> List Sheep
+    -> Sheep
+    -> Sheep
+updateFlocking seed0 frames fences doggo flock sheep =
     let
         -- The flock within the sheep's awareness, paired with the vector to
         -- each sheep, and its quadrance.
@@ -77,11 +92,6 @@ updateFlocking seed0 frames doggo flock sheep =
         -- Average velocity of a sheep in the flock.
         flockVelocity : V2
         flockVelocity =
-            -- case List.head (List.sortBy (\( _, _, quadrance ) -> quadrance) nearbyFlock) of
-            --     Nothing ->
-            --         V2.zero
-            --     Just ( nearbySheep, _, _ ) ->
-            --         nearbySheep.vel
             nearbyFlock
                 |> List.map (\( nearbySheep, _, _ ) -> nearbySheep.vel)
                 |> V2.sum
@@ -149,6 +159,10 @@ updateFlocking seed0 frames doggo flock sheep =
             else
                 V2.zero
 
+        fenceForce : V2
+        fenceForce =
+            V2.sum (List.map (Fence.forceOn sheep) fences)
+
         newVelocity : V2
         newVelocity =
             let
@@ -163,10 +177,10 @@ updateFlocking seed0 frames doggo flock sheep =
                             seed0
                         )
             in
-            sheep.vel
-                |> V2.add flockVelocity
+            flockVelocity
                 |> V2.add flockForce
                 |> V2.add doggoForce
+                |> V2.add fenceForce
                 |> V2.add noise
                 |> V2.clampNorm gMinVelocity gMaxVelocity
 
@@ -211,8 +225,14 @@ sheepForce sheep ( otherSheep, diff, quadrance ) =
             |> V2.scale (20 / quadrance)
 
 
-updateGrazing : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
-updateGrazing frames doggo flock sheep =
+updateGrazing :
+    Float
+    -> List Fence
+    -> { r | pos : P2 }
+    -> List Sheep
+    -> Sheep
+    -> Sheep
+updateGrazing frames fences doggo flock sheep =
     if sheep.food > 1 then
         { sheep | state = Flocking }
 
@@ -220,8 +240,14 @@ updateGrazing frames doggo flock sheep =
         { sheep | food = sheep.food + frames * gFoodGainRate }
 
 
-updateSleeping : Float -> { r | pos : P2 } -> List Sheep -> Sheep -> Sheep
-updateSleeping frames doggo flock sheep =
+updateSleeping :
+    Float
+    -> List Fence
+    -> { r | pos : P2 }
+    -> List Sheep
+    -> Sheep
+    -> Sheep
+updateSleeping frames fences doggo flock sheep =
     sheep
 
 
@@ -309,7 +335,7 @@ gMaxVelocity =
 
 gMinVelocity : Float
 gMinVelocity =
-    0.5
+    0.01
 
 
 {-| Radians per frame

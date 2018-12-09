@@ -8,6 +8,7 @@ import Collage.Render as Render exposing (svg)
 import Collage.Text as Text exposing (..)
 import Color exposing (Color, rgb)
 import Dict.Any exposing (AnyDict)
+import Games.Sheep.Fence as Fence exposing (Fence)
 import Games.Sheep.Sheep as Sheep exposing (Sheep)
 import Html exposing (Html)
 import Html.Attributes as Hattr
@@ -24,6 +25,7 @@ type alias Model =
     { doggo : Doggo
     , sheep : List Sheep
     , borks : Borks
+    , fences : List Fence
     , windowSize : WindowSize
     , totalFrames : Float
     , seed : Random.Seed
@@ -90,15 +92,20 @@ integratePos frames entity =
     P2.add entity.pos (V2.scale frames entity.vel)
 
 
-updateFlock : Random.Seed -> Float -> Doggo -> (List Sheep -> List Sheep)
-updateFlock seed frames doggo =
+updateFlock :
+    Random.Seed
+    -> Float
+    -> List Fence
+    -> Doggo
+    -> (List Sheep -> List Sheep)
+updateFlock seed frames fences doggo =
     SelectList.selectedMapForList
         (\flock ->
             let
                 ( herd1, sheep, herd2 ) =
                     SelectList.toTuple flock
             in
-            Sheep.update seed frames doggo (herd1 ++ herd2) sheep
+            Sheep.update seed frames fences doggo (herd1 ++ herd2) sheep
         )
 
 
@@ -217,6 +224,12 @@ init =
         , angle = 0
         }
     , borks = Dict.Any.empty P2.asTuple
+    , fences =
+        [ ( P2 -600 600, P2 600 600 )
+        , ( P2 600 600, P2 600 -600 )
+        , ( P2 600 -600, P2 -600 -600 )
+        , ( P2 -600 -600, P2 -600 600 )
+        ]
     , sheep = randomFlock 100 (Random.initialSeed 0)
     , windowSize = WindowSize 0 0
     , totalFrames = 0
@@ -237,7 +250,7 @@ update msg model =
                     Random.step Random.independentSeed model.seed
 
                 newFlock =
-                    updateFlock freshSeed frames model.doggo model.sheep
+                    updateFlock freshSeed frames model.fences model.doggo model.sheep
 
                 newDoggo =
                     moveDoggo frames model.doggo
@@ -355,9 +368,12 @@ view model =
         ]
         [ svg <|
             group <|
-                viewBorks model.borks
-                    :: viewDoggo model.doggo model.totalFrames
-                    :: List.map Sheep.view model.sheep
+                List.concat
+                    [ [ viewDoggo model.doggo model.totalFrames ]
+                    , [ viewBorks model.borks ]
+                    , List.map Fence.view model.fences
+                    , List.map Sheep.view model.sheep
+                    ]
 
         -- , Html.text (Debug.toString model)
         ]
