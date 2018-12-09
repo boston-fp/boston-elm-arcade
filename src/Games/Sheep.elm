@@ -85,20 +85,20 @@ stepBorks frames borks =
 
 updateFlock :
     Config
-    -> Random.Seed
-    -> Float
     -> List Fence
     -> Doggo
-    -> (List Sheep -> List Sheep)
-updateFlock config seed frames fences doggo =
-    SelectList.selectedMapForList
-        (\flock ->
-            let
-                ( herd1, sheep, herd2 ) =
-                    SelectList.toTuple flock
-            in
-            Sheep.update config seed frames fences doggo (herd1 ++ herd2) sheep
-        )
+    -> List Sheep
+    -> Eff { ro | frames : Float } { rw | seed : Random.Seed } (List Sheep)
+updateFlock config fences doggo =
+    Eff.sequenceList
+        << SelectList.selectedMapForList
+            (\flock ->
+                let
+                    ( herd1, sheep, herd2 ) =
+                        SelectList.toTuple flock
+                in
+                Sheep.update config fences doggo (herd1 ++ herd2) sheep
+            )
 
 
 init : Model
@@ -183,22 +183,23 @@ update msg model =
     case msg of
         Frame frames ->
             let
-                ( freshSeed, newSeed ) =
-                    Random.step Random.independentSeed model.seed
+                newFlockEff : Eff { ro | frames : Float } { rw | seed : Random.Seed } (List Sheep)
+                newFlockEff =
+                    updateFlock model.config model.fences model.doggo model.sheep
 
-                newFlock =
-                    updateFlock model.config freshSeed frames model.fences model.doggo model.sheep
+                newDoggoEff : Eff { ro | frames : Float } any Doggo
+                newDoggoEff =
+                    Doggo.update model.config model.controller model.doggo
 
-                newDoggo =
-                    Tuple.first <|
-                        Eff.run
-                            (Doggo.update
-                                model.config
-                                model.controller
-                                model.doggo
-                            )
-                            { frames = frames }
-                            ()
+                ( ( newFlock, newDoggo ), newSeed ) =
+                    Eff.run
+                        (Eff.map2
+                            (\flock doggo -> ( flock, doggo ))
+                            newFlockEff
+                            newDoggoEff
+                        )
+                        { frames = frames }
+                        { seed = model.seed }
             in
             noCmd
                 { model
@@ -206,7 +207,7 @@ update msg model =
                     , sheep = newFlock
                     , totalFrames = model.totalFrames + frames
                     , borks = stepBorks frames model.borks
-                    , seed = newSeed
+                    , seed = newSeed.seed
                 }
 
         WindowResized size ->

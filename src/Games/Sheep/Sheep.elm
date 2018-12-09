@@ -8,6 +8,7 @@ module Games.Sheep.Sheep exposing
 
 import Collage exposing (Collage)
 import Color exposing (Color)
+import Games.Sheep.Eff as Eff exposing (Eff)
 import Games.Sheep.Fence as Fence exposing (Fence)
 import P2 exposing (P2)
 import Radians exposing (Radians)
@@ -47,35 +48,31 @@ type alias Config r =
 
 update :
     Config r1
-    -> Random.Seed
-    -> Float
     -> List Fence
     -> { r2 | pos : P2 }
     -> List Sheep
     -> Sheep
-    -> Sheep
-update config seed frames fences doggo flock sheep =
+    -> Eff { ro | frames : Float } { rw | seed : Random.Seed } Sheep
+update config fences doggo flock sheep =
     case sheep.state of
         Flocking ->
-            updateFlocking config seed frames fences doggo flock sheep
+            updateFlocking config fences doggo flock sheep
 
         Grazing ->
-            updateGrazing frames fences doggo flock sheep
+            Debug.todo ""
 
         Sleeping ->
-            updateSleeping frames fences doggo flock sheep
+            Debug.todo ""
 
 
 updateFlocking :
     Config r1
-    -> Random.Seed
-    -> Float
     -> List Fence
     -> { r2 | pos : P2 }
     -> List Sheep
     -> Sheep
-    -> Sheep
-updateFlocking config seed0 frames fences doggo flock sheep =
+    -> Eff { ro | frames : Float } { rw | seed : Random.Seed } Sheep
+updateFlocking config fences doggo flock sheep =
     let
         -- The flock within the sheep's awareness, paired with the vector to
         -- each sheep, and its quadrance.
@@ -97,11 +94,23 @@ updateFlocking config seed0 frames fences doggo flock sheep =
                         Nothing
                 )
                 flock
+    in
+    updateFlocking_ config fences doggo nearbyFlock sheep
 
+
+updateFlocking_ :
+    Config r1
+    -> List Fence
+    -> { r2 | pos : P2 }
+    -> List ( Sheep, V2, Float )
+    -> Sheep
+    -> Eff { ro | frames : Float } { rw | seed : Random.Seed } Sheep
+updateFlocking_ config fences doggo flock sheep =
+    let
         -- Average velocity of a sheep in the flock.
         flockVelocity : V2
         flockVelocity =
-            nearbyFlock
+            flock
                 |> List.map (\( nearbySheep, _, _ ) -> nearbySheep.vel)
                 |> V2.sum
                 |> V2.scale (1 / toFloat (List.length flock))
@@ -133,10 +142,10 @@ updateFlocking config seed0 frames fences doggo flock sheep =
                         (\( _, _, quadrance ) ->
                             quadrance <= gComfortZoneRadius * gComfortZoneRadius
                         )
-                        nearbyFlock
+                        flock
             in
             if List.isEmpty veryNearbyFlock then
-                nearbyFlock
+                flock
                     |> List.map (sheepForce sheep)
                     |> V2.sum
 
@@ -172,32 +181,50 @@ updateFlocking config seed0 frames fences doggo flock sheep =
         fenceForce =
             V2.sum (List.map (Fence.forceOn sheep) fences)
 
-        newVelocity : V2
-        newVelocity =
-            let
-                noise : V2
-                noise =
-                    Tuple.first
-                        (Random.step
-                            (Random.map2 V2
-                                (Random.float -0.25 0.25)
-                                (Random.float -0.25 0.25)
-                            )
-                            seed0
-                        )
-            in
-            flockVelocity
-                |> V2.add flockForce
-                |> V2.add doggoForce
-                |> V2.add fenceForce
-                |> V2.add noise
-                |> V2.clampNorm config.minSheepVelocity config.maxSheepVelocity
+        newVelocityEff : Eff any { rw | seed : Random.Seed } V2
+        newVelocityEff =
+            Eff.map
+                (\noise ->
+                    flockVelocity
+                        |> V2.add flockForce
+                        |> V2.add doggoForce
+                        |> V2.add fenceForce
+                        |> V2.add noise
+                        |> V2.clampNorm config.minSheepVelocity config.maxSheepVelocity
+                        |> limitTurnRate config sheep
+                )
+                (Eff.random
+                    (Random.map2
+                        V2
+                        (Random.float -0.25 0.25)
+                        (Random.float -0.25 0.25)
+                    )
+                )
 
-        newVelocity2 =
-            let
-                theta =
-                    V2.angleBetween sheep.vel newVelocity
-            in
+        newPosEff : Eff { ro | frames : Float } any P2
+        newPosEff =
+            Eff.readOnly
+                (\env -> P2.add sheep.pos (V2.scale env.frames sheep.vel))
+
+        newFoodEff : Eff { ro | frames : Float } any Float
+        newFoodEff =
+            Eff.readOnly
+                (\env -> sheep.food - gFoodLossRate * env.frames)
+    in
+    Eff.map3
+        (\vel pos food -> { sheep | vel = vel, pos = pos, food = food })
+        newVelocityEff
+        newPosEff
+        newFoodEff
+
+
+limitTurnRate : Config r1 -> { r2 | vel : V2 } -> V2 -> V2
+limitTurnRate config sheep newVelocity =
+    let
+        theta =
+            V2.angleBetween sheep.vel newVelocity
+
+        adjust =
             -- Unhappy path: the sheep's new velocity is too great an angle away
             -- from its previous velocity. So un-rotate the new velocity, then
             -- re-rotate it in the same direction, but only 'sheepTurnRate'
@@ -205,16 +232,11 @@ updateFlocking config seed0 frames fences doggo flock sheep =
             if abs theta > config.sheepTurnRate then
                 V2.rotate
                     (-theta + Radians.signum theta * config.sheepTurnRate)
-                    newVelocity
 
             else
-                newVelocity
+                identity
     in
-    { sheep
-        | vel = newVelocity2
-        , pos = P2.add sheep.pos (V2.scale frames sheep.vel)
-        , food = sheep.food - (gFoodLossRate * frames)
-    }
+    adjust newVelocity
 
 
 {-| Calculate the force one sheep has on another:
