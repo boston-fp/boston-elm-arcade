@@ -11,6 +11,7 @@ import Dict.Any exposing (AnyDict)
 import Games.Sheep.Config exposing (Config)
 import Games.Sheep.Controller as Controller exposing (Controller)
 import Games.Sheep.Doggo as Doggo exposing (Doggo)
+import Games.Sheep.Eff as Eff exposing (Eff)
 import Games.Sheep.Fence as Fence exposing (Fence)
 import Games.Sheep.Sheep as Sheep exposing (Sheep)
 import Html exposing (Html)
@@ -69,7 +70,7 @@ newBork config controller doggo =
 
                 Nothing ->
                     Just
-                        { dir = V2.signorm (doggoVel config controller doggo)
+                        { dir = V2.signorm (Doggo.doggoVel config controller doggo)
                         , framesLeft = 10
                         }
         )
@@ -80,11 +81,6 @@ stepBorks frames borks =
     borks
         |> Dict.Any.map (\_ bork -> { bork | framesLeft = bork.framesLeft - 1 })
         |> Dict.Any.filter (\_ bork -> bork.framesLeft > 0)
-
-
-integratePos : Float -> { r | pos : P2, vel : V2 } -> P2
-integratePos frames entity =
-    P2.add entity.pos (V2.scale frames entity.vel)
 
 
 updateFlock :
@@ -103,66 +99,6 @@ updateFlock config seed frames fences doggo =
             in
             Sheep.update config seed frames fences doggo (herd1 ++ herd2) sheep
         )
-
-
-{-| 'repel p q' calculates a vector pointing from 'p' to 'q', with norm
-proportional to the inverse square of the distance bewteen 'p' and 'q'.
-
-        ↗    <-- returned vector
-      q
-
-p
-
--}
-repel : { r | pos : P2 } -> { s | pos : P2 } -> V2
-repel pariah senpai =
-    let
-        vec =
-            P2.diff senpai.pos pariah.pos
-    in
-    V2.scale (1 / V2.quadrance vec) vec
-
-
-type Bearing
-    = Forward
-    | Halt
-    | Back
-
-
-doggoVel : Config -> Controller -> Doggo -> V2
-doggoVel config controller doggo =
-    let
-        vec =
-            V2.fromRadians doggo.angle
-
-        magnitude =
-            case bearingDoggo controller of
-                Forward ->
-                    10
-
-                Halt ->
-                    5
-
-                Back ->
-                    config.maxSheepVelocity
-    in
-    V2.scale magnitude vec
-
-
-bearingDoggo : Controller -> Bearing
-bearingDoggo d =
-    case ( d.up, d.down ) of
-        ( True, True ) ->
-            Halt
-
-        ( True, False ) ->
-            Forward
-
-        ( False, True ) ->
-            Back
-
-        ( False, False ) ->
-            Halt
 
 
 init : Model
@@ -231,6 +167,9 @@ init =
         { maxSheepVelocity = 3
         , minSheepVelocity = 0.1
         , sheepTurnRate = 0.05
+        , crawlingDoggoTurnRate = pi / 60
+        , walkingDoggoTurnRate = pi / 30
+        , runningDoggoTurnRate = pi / 40
         }
     }
 
@@ -251,7 +190,15 @@ update msg model =
                     updateFlock model.config freshSeed frames model.fences model.doggo model.sheep
 
                 newDoggo =
-                    moveDoggo model.config frames model.controller model.doggo
+                    Tuple.first <|
+                        Eff.run
+                            (Doggo.update
+                                model.config
+                                model.controller
+                                model.doggo
+                            )
+                            { frames = frames }
+                            ()
             in
             noCmd
                 { model
@@ -284,45 +231,6 @@ update msg model =
 
                 Controller.Noop newController ->
                     noCmd { model | controller = newController }
-
-
-moveDoggo : Config -> Float -> Controller -> Doggo -> Doggo
-moveDoggo config frames controller doggo =
-    let
-        turntRate =
-            case bearingDoggo controller of
-                Forward ->
-                    pi / 40
-
-                Halt ->
-                    pi / 30
-
-                Back ->
-                    pi / 60
-
-        angleDt : Radians
-        angleDt =
-            turntRate
-                * frames
-                * (case ( controller.left, controller.right ) of
-                    ( True, False ) ->
-                        1
-
-                    ( False, True ) ->
-                        -1
-
-                    _ ->
-                        0
-                  )
-
-        newPos : P2
-        newPos =
-            integratePos frames
-                { pos = doggo.pos
-                , vel = doggoVel config controller doggo
-                }
-    in
-    { doggo | pos = newPos, angle = doggo.angle + angleDt }
 
 
 view : Model -> Html Msg
