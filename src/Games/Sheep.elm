@@ -1,4 +1,4 @@
-module Games.Sheep exposing (Doggo, Model, Msg(..), init, integratePos, main, subscriptions, update, view)
+module Games.Sheep exposing (..)
 
 import Browser
 import Browser.Events
@@ -9,6 +9,8 @@ import Collage.Text as Text exposing (..)
 import Color exposing (Color, rgb)
 import Dict.Any exposing (AnyDict)
 import Games.Sheep.Config exposing (Config)
+import Games.Sheep.Controller as Controller exposing (Controller)
+import Games.Sheep.Doggo as Doggo exposing (Doggo)
 import Games.Sheep.Fence as Fence exposing (Fence)
 import Games.Sheep.Sheep as Sheep exposing (Sheep)
 import Html exposing (Html)
@@ -23,7 +25,8 @@ import V2 exposing (V2(..))
 
 
 type alias Model =
-    { doggo : Doggo
+    { controller : Controller
+    , doggo : Doggo
     , sheep : List Sheep
     , borks : Borks
     , fences : List Fence
@@ -50,24 +53,14 @@ type Msg
     | WindowResized WindowSize
 
 
-type alias Doggo =
-    { pos : P2
-    , up : Bool
-    , down : Bool
-    , left : Bool
-    , right : Bool
-    , angle : Radians
-    }
-
-
 type alias Bork =
     { dir : V2
     , framesLeft : Float
     }
 
 
-newBork : Config -> Doggo -> Borks -> Borks
-newBork config doggo =
+newBork : Config -> Controller -> Doggo -> Borks -> Borks
+newBork config controller doggo =
     Dict.Any.update doggo.pos
         (\existingBork ->
             case existingBork of
@@ -76,7 +69,7 @@ newBork config doggo =
 
                 Nothing ->
                     Just
-                        { dir = V2.signorm (doggoVel config doggo)
+                        { dir = V2.signorm (doggoVel config controller doggo)
                         , framesLeft = 10
                         }
         )
@@ -136,14 +129,14 @@ type Bearing
     | Back
 
 
-doggoVel : Config -> Doggo -> V2
-doggoVel config doggo =
+doggoVel : Config -> Controller -> Doggo -> V2
+doggoVel config controller doggo =
     let
         vec =
             V2.fromRadians doggo.angle
 
         magnitude =
-            case bearingDoggo doggo of
+            case bearingDoggo controller of
                 Forward ->
                     10
 
@@ -156,7 +149,7 @@ doggoVel config doggo =
     V2.scale magnitude vec
 
 
-bearingDoggo : Doggo -> Bearing
+bearingDoggo : Controller -> Bearing
 bearingDoggo d =
     case ( d.up, d.down ) of
         ( True, True ) ->
@@ -218,12 +211,9 @@ init =
                 in
                 sheep :: randomFlock (n - 1) seed1
     in
-    { doggo =
+    { controller = Controller.new
+    , doggo =
         { pos = P2 0 0
-        , up = False
-        , down = False
-        , left = False
-        , right = False
         , angle = 0
         }
     , borks = Dict.Any.empty P2.asTuple
@@ -261,7 +251,7 @@ update msg model =
                     updateFlock model.config freshSeed frames model.fences model.doggo model.sheep
 
                 newDoggo =
-                    moveDoggo model.config frames model.doggo
+                    moveDoggo model.config frames model.controller model.doggo
             in
             noCmd
                 { model
@@ -275,52 +265,32 @@ update msg model =
         WindowResized size ->
             noCmd { model | windowSize = size }
 
-        KeyEvent e ->
-            noCmd <|
-                case e of
-                    KeyDown Key.Space ->
-                        { model | borks = newBork model.config model.doggo model.borks }
+        KeyEvent event ->
+            case Controller.update event model.controller of
+                Controller.Rise button newController ->
+                    case button of
+                        Controller.Space ->
+                            noCmd
+                                { model
+                                    | borks = newBork model.config newController model.doggo model.borks
+                                    , controller = newController
+                                }
 
-                    _ ->
-                        { model | doggo = setKey e model.doggo }
+                        _ ->
+                            noCmd { model | controller = newController }
 
+                Controller.Fall button_ newController ->
+                    noCmd { model | controller = newController }
 
-setKey : Key.Event -> Doggo -> Doggo
-setKey e doggo =
-    case e of
-        KeyUp Key.Left ->
-            { doggo | left = False }
-
-        KeyUp Key.Right ->
-            { doggo | right = False }
-
-        KeyDown Key.Left ->
-            { doggo | left = True }
-
-        KeyDown Key.Right ->
-            { doggo | right = True }
-
-        KeyUp Key.Up ->
-            { doggo | up = False }
-
-        KeyUp Key.Down ->
-            { doggo | down = False }
-
-        KeyDown Key.Up ->
-            { doggo | up = True }
-
-        KeyDown Key.Down ->
-            { doggo | down = True }
-
-        _ ->
-            doggo
+                Controller.Noop newController ->
+                    noCmd { model | controller = newController }
 
 
-moveDoggo : Config -> Float -> Doggo -> Doggo
-moveDoggo config frames doggo =
+moveDoggo : Config -> Float -> Controller -> Doggo -> Doggo
+moveDoggo config frames controller doggo =
     let
         turntRate =
-            case bearingDoggo doggo of
+            case bearingDoggo controller of
                 Forward ->
                     pi / 40
 
@@ -334,7 +304,7 @@ moveDoggo config frames doggo =
         angleDt =
             turntRate
                 * frames
-                * (case ( doggo.left, doggo.right ) of
+                * (case ( controller.left, controller.right ) of
                     ( True, False ) ->
                         1
 
@@ -349,7 +319,7 @@ moveDoggo config frames doggo =
         newPos =
             integratePos frames
                 { pos = doggo.pos
-                , vel = doggoVel config doggo
+                , vel = doggoVel config controller doggo
                 }
     in
     { doggo | pos = newPos, angle = doggo.angle + angleDt }
