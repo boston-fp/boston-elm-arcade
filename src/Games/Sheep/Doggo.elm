@@ -36,11 +36,12 @@ update config controller doggo =
     let
         angleDt : Eff { ro | frames : Float } rw Radians
         angleDt =
-            Eff.readOnly
-                (\env ->
-                    turntRate config controller
-                        * env.frames
-                        * (case ( controller.left, controller.right ) of
+            Eff.pure (\x y z -> x * y * z)
+                |> Eff.ap (Eff.pure (turntRate config controller))
+                |> Eff.ap (Eff.asks .frames)
+                |> Eff.ap
+                    (Eff.pure
+                        (case ( controller.left, controller.right ) of
                             ( True, False ) ->
                                 1
 
@@ -49,18 +50,19 @@ update config controller doggo =
 
                             _ ->
                                 0
-                          )
-                )
+                        )
+                    )
 
         newPos : Eff { ro | frames : Float } rw P2
         newPos =
-            Eff.readOnly
-                (\env ->
-                    integratePos env.frames
+            Eff.pure integratePos
+                |> Eff.ap (Eff.asks .frames)
+                |> Eff.ap
+                    (Eff.pure
                         { pos = doggo.pos
                         , vel = doggoVel config controller doggo
                         }
-                )
+                    )
     in
     Eff.map2
         (\ang paws ->

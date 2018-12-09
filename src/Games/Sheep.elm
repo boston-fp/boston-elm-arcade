@@ -72,48 +72,24 @@ updateFlock config fences doggo =
 init : Model
 init =
     let
-        randomSheep : Random.Seed -> ( Sheep, Random.Seed )
-        randomSheep seed0 =
-            let
-                ( px, seed1 ) =
-                    Random.step (Random.float -400 400) seed0
-
-                ( py, seed2 ) =
-                    Random.step (Random.float -400 400) seed1
-
-                ( vx, seed3 ) =
-                    Random.step (Random.float -4 4) seed2
-
-                ( vy, seed4 ) =
-                    Random.step (Random.float -4 4) seed3
-
-                ( m, seed5 ) =
-                    Random.step (Random.float 1 1.1) seed4
-
-                ( c, seed6 ) =
-                    Random.step (Random.uniform Sheep.Black [ Sheep.Brown, Sheep.White ]) seed5
-            in
-            ( { pos = P2 px py
-              , vel = V2 vx vy
-              , mass = m
-              , food = 1
-              , state = Sheep.Flocking
-              , color = c
-              }
-            , seed6
-            )
-
-        randomFlock : Int -> Random.Seed -> List Sheep
-        randomFlock n seed0 =
-            if n == 0 then
-                []
-
-            else
-                let
-                    ( sheep, seed1 ) =
-                        randomSheep seed0
-                in
-                sheep :: randomFlock (n - 1) seed1
+        randomSheep : Eff ro { rw | seed : Random.Seed } Sheep
+        randomSheep =
+            Eff.pure
+                (\px py vx vy mass color ->
+                    { pos = P2 px py
+                    , vel = V2 vx vy
+                    , mass = mass
+                    , food = 1
+                    , state = Sheep.Flocking
+                    , color = color
+                    }
+                )
+                |> Eff.ap (Eff.random (Random.float -400 400))
+                |> Eff.ap (Eff.random (Random.float -400 400))
+                |> Eff.ap (Eff.random (Random.float -4 4))
+                |> Eff.ap (Eff.random (Random.float -4 4))
+                |> Eff.ap (Eff.random (Random.float 1 1.2))
+                |> Eff.ap (Eff.random (Random.uniform Sheep.Black [ Sheep.Brown, Sheep.White ]))
     in
     { controller = Controller.new
     , doggo =
@@ -127,7 +103,13 @@ init =
         , ( P2 600 -600, P2 -600 -600 )
         , ( P2 -600 -600, P2 -600 600 )
         ]
-    , sheep = randomFlock 100 (Random.initialSeed 0)
+    , sheep =
+        Tuple.first
+            (Eff.run
+                (Eff.replicate 100 randomSheep)
+                ()
+                { seed = Random.initialSeed 0 }
+            )
     , windowSize = WindowSize 0 0
     , totalFrames = 0
     , seed = Random.initialSeed 0
