@@ -2,7 +2,6 @@ module Games.Sheep.Sheep exposing
     ( Sheep
     , SheepColor(..)
     , State(..)
-    , gMaxVelocity
     , update
     , view
     )
@@ -38,18 +37,27 @@ type State
     | Sleeping
 
 
+type alias Config r =
+    { r
+        | maxSheepVelocity : Float
+        , minSheepVelocity : Float
+        , sheepTurnRate : Float
+    }
+
+
 update :
-    Random.Seed
+    Config r1
+    -> Random.Seed
     -> Float
     -> List Fence
-    -> { r | pos : P2 }
+    -> { r2 | pos : P2 }
     -> List Sheep
     -> Sheep
     -> Sheep
-update seed frames fences doggo flock sheep =
+update config seed frames fences doggo flock sheep =
     case sheep.state of
         Flocking ->
-            updateFlocking seed frames fences doggo flock sheep
+            updateFlocking config seed frames fences doggo flock sheep
 
         Grazing ->
             updateGrazing frames fences doggo flock sheep
@@ -59,14 +67,15 @@ update seed frames fences doggo flock sheep =
 
 
 updateFlocking :
-    Random.Seed
+    Config r1
+    -> Random.Seed
     -> Float
     -> List Fence
-    -> { r | pos : P2 }
+    -> { r2 | pos : P2 }
     -> List Sheep
     -> Sheep
     -> Sheep
-updateFlocking seed0 frames fences doggo flock sheep =
+updateFlocking config seed0 frames fences doggo flock sheep =
     let
         -- The flock within the sheep's awareness, paired with the vector to
         -- each sheep, and its quadrance.
@@ -182,7 +191,7 @@ updateFlocking seed0 frames fences doggo flock sheep =
                 |> V2.add doggoForce
                 |> V2.add fenceForce
                 |> V2.add noise
-                |> V2.clampNorm gMinVelocity gMaxVelocity
+                |> V2.clampNorm config.minSheepVelocity config.maxSheepVelocity
 
         newVelocity2 =
             let
@@ -191,10 +200,11 @@ updateFlocking seed0 frames fences doggo flock sheep =
             in
             -- Unhappy path: the sheep's new velocity is too great an angle away
             -- from its previous velocity. So un-rotate the new velocity, then
-            -- re-rotate it in the same direction, but only 'gTurnRate' radians.
-            if abs theta > gTurnRate then
+            -- re-rotate it in the same direction, but only 'sheepTurnRate'
+            -- radians.
+            if abs theta > config.sheepTurnRate then
                 V2.rotate
-                    (-theta + Radians.signum theta * gTurnRate)
+                    (-theta + Radians.signum theta * config.sheepTurnRate)
                     newVelocity
 
             else
@@ -324,25 +334,6 @@ view sheep =
 --------------------------------------------------------------------------------
 -- Constants
 --------------------------------------------------------------------------------
-
-
-{-| Velocity per frame
--}
-gMaxVelocity : Float
-gMaxVelocity =
-    3
-
-
-gMinVelocity : Float
-gMinVelocity =
-    0.01
-
-
-{-| Radians per frame
--}
-gTurnRate : Radians
-gTurnRate =
-    0.05
 
 
 {-| How far a sheep is aware of its surroundings.

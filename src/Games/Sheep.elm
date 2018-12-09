@@ -8,6 +8,7 @@ import Collage.Render as Render exposing (svg)
 import Collage.Text as Text exposing (..)
 import Color exposing (Color, rgb)
 import Dict.Any exposing (AnyDict)
+import Games.Sheep.Config exposing (Config)
 import Games.Sheep.Fence as Fence exposing (Fence)
 import Games.Sheep.Sheep as Sheep exposing (Sheep)
 import Html exposing (Html)
@@ -29,6 +30,7 @@ type alias Model =
     , windowSize : WindowSize
     , totalFrames : Float
     , seed : Random.Seed
+    , config : Config
     }
 
 
@@ -64,8 +66,8 @@ type alias Bork =
     }
 
 
-newBork : Doggo -> Borks -> Borks
-newBork doggo =
+newBork : Config -> Doggo -> Borks -> Borks
+newBork config doggo =
     Dict.Any.update doggo.pos
         (\existingBork ->
             case existingBork of
@@ -74,7 +76,7 @@ newBork doggo =
 
                 Nothing ->
                     Just
-                        { dir = V2.signorm (doggoVel doggo)
+                        { dir = V2.signorm (doggoVel config doggo)
                         , framesLeft = 10
                         }
         )
@@ -93,19 +95,20 @@ integratePos frames entity =
 
 
 updateFlock :
-    Random.Seed
+    Config
+    -> Random.Seed
     -> Float
     -> List Fence
     -> Doggo
     -> (List Sheep -> List Sheep)
-updateFlock seed frames fences doggo =
+updateFlock config seed frames fences doggo =
     SelectList.selectedMapForList
         (\flock ->
             let
                 ( herd1, sheep, herd2 ) =
                     SelectList.toTuple flock
             in
-            Sheep.update seed frames fences doggo (herd1 ++ herd2) sheep
+            Sheep.update config seed frames fences doggo (herd1 ++ herd2) sheep
         )
 
 
@@ -133,8 +136,8 @@ type Bearing
     | Back
 
 
-doggoVel : Doggo -> V2
-doggoVel doggo =
+doggoVel : Config -> Doggo -> V2
+doggoVel config doggo =
     let
         vec =
             V2.fromRadians doggo.angle
@@ -148,7 +151,7 @@ doggoVel doggo =
                     5
 
                 Back ->
-                    Sheep.gMaxVelocity
+                    config.maxSheepVelocity
     in
     V2.scale magnitude vec
 
@@ -234,6 +237,11 @@ init =
     , windowSize = WindowSize 0 0
     , totalFrames = 0
     , seed = Random.initialSeed 0
+    , config =
+        { maxSheepVelocity = 3
+        , minSheepVelocity = 0.1
+        , sheepTurnRate = 0.05
+        }
     }
 
 
@@ -250,10 +258,10 @@ update msg model =
                     Random.step Random.independentSeed model.seed
 
                 newFlock =
-                    updateFlock freshSeed frames model.fences model.doggo model.sheep
+                    updateFlock model.config freshSeed frames model.fences model.doggo model.sheep
 
                 newDoggo =
-                    moveDoggo frames model.doggo
+                    moveDoggo model.config frames model.doggo
             in
             noCmd
                 { model
@@ -271,7 +279,7 @@ update msg model =
             noCmd <|
                 case e of
                     KeyDown Key.Space ->
-                        { model | borks = newBork model.doggo model.borks }
+                        { model | borks = newBork model.config model.doggo model.borks }
 
                     _ ->
                         { model | doggo = setKey e model.doggo }
@@ -308,8 +316,8 @@ setKey e doggo =
             doggo
 
 
-moveDoggo : Float -> Doggo -> Doggo
-moveDoggo frames doggo =
+moveDoggo : Config -> Float -> Doggo -> Doggo
+moveDoggo config frames doggo =
     let
         turntRate =
             case bearingDoggo doggo of
@@ -341,7 +349,7 @@ moveDoggo frames doggo =
         newPos =
             integratePos frames
                 { pos = doggo.pos
-                , vel = doggoVel doggo
+                , vel = doggoVel config doggo
                 }
     in
     { doggo | pos = newPos, angle = doggo.angle + angleDt }
