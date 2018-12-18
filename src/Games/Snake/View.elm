@@ -29,16 +29,34 @@ gameCoordToViewCoord val =
 
 view : Model -> Html msg
 view model =
-    WebGL.toHtml
+    let
+        -- Optimized for retina displays,
+        devicePixelRatio =
+            2
+
+        screenWidth =
+            800 * devicePixelRatio
+
+        screenHeight =
+            600 * devicePixelRatio
+    in
+    Html.div
         [ Hattr.style "background-color" "rgb(20,20,20)"
-        , Hattr.style "width" "100%"
+        , Hattr.style "width" "100vw"
         , Hattr.style "height" "100vh"
         , Hattr.style "display" "flex"
         , Hattr.style "flex-direction" "column"
         , Hattr.style "align-items" "center"
         , Hattr.style "justify-content" "center"
         ]
-        [ WebGL.entity vertexShader fragmentShader triangle {}
+    <|
+        [ WebGL.toHtml
+            [ Hattr.style "width" "800px"
+            , Hattr.style "height" "600px"
+            , Hattr.width screenWidth
+            , Hattr.height screenHeight
+            ]
+            [ WebGL.entity vertexShader fragmentShader triangle {} ]
         ]
 
 
@@ -49,13 +67,13 @@ type alias Vertex =
 triangle : WebGL.Mesh Vertex
 triangle =
     let
-        black =
+        blue =
             vec3 0 0 1
     in
     WebGL.triangles
-        [ ( Vertex (vec3 0 0 0) black
-          , Vertex (vec3 1 1 0) black
-          , Vertex (vec3 1 -1 0) black
+        [ ( Vertex (vec3 0 0 0) blue
+          , Vertex (vec3 -1 -1 0) blue
+          , Vertex (vec3 1 -1 0) blue
           )
         ]
 
