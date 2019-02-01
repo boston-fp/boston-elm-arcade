@@ -6,6 +6,8 @@
     "elm-version": "0.19.0",
     "dependencies": {
         "direct": {
+            "Zinggi/elm-2d-game": "4.0.0",
+            "Zinggi/elm-game-resources": "2.0.1",
             "elm/browser": "1.0.0",
             "elm/core": "1.0.0",
             "elm/html": "1.0.0",
@@ -16,12 +18,16 @@
             "elm/url": "1.0.0",
             "mdgriffith/elm-ui": "1.1.0",
             "miyamoen/select-list": "4.0.0",
+            "ohanhi/keyboard": "2.0.0",
             "the-sett/elm-color": "1.0.1",
             "timjs/elm-collage": "2.0.0",
             "turboMaCk/any-dict": "1.0.1"
         },
         "indirect": {
-            "elm/virtual-dom": "1.0.0"
+            "avh4/elm-color": "1.0.0",
+            "elm/virtual-dom": "1.0.0",
+            "elm-explorations/linear-algebra": "1.0.3",
+            "elm-explorations/webgl": "1.0.1"
         }
     },
     "test-dependencies": {

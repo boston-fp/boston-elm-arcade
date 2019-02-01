@@ -14,7 +14,7 @@ if you choose.
 
 - Get node.js and npm for your distribution
 - Run `npm install -g elm elm-format create-elm-app`
-- run `elm-app start` in the project directory
+- run `env ELM_DEBUGGER=false elm-app start` in the project directory
 
 ### Develop With Docker
 
